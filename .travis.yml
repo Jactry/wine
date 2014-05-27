@@ -1,0 +1,5 @@
+language: objective-c
+compiler:
+  - clang
+# Change this to your needs
+script: ./configure --without-x && make
