@@ -1,5 +1,5 @@
 before_script:
-  - brew install --universal freetype jpeg libtiff libpng libgsm libtool little-cms2 libgphoto2
+  - brew install --universal freetype jpeg libtiff libgsm libtool little-cms2 libgphoto2
 language: objective-c
 compiler:
   - clang
