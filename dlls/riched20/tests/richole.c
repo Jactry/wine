@@ -757,6 +757,60 @@ static void test_ITextRange_GetText(void)
   release_interfaces(&w, &reOle, &txtDoc, NULL);
 }
 
+static void test_ITextRange_GetChar(void)
+{
+  HWND w;
+  IRichEditOle *reOle = NULL;
+  ITextDocument *txtDoc = NULL;
+  ITextRange *txtRge = NULL;
+  HRESULT hres;
+  LONG pch = 0xdeadbeef;
+  int first, lim;
+  static const CHAR test_text1[] = "TestSomeText";
+
+  create_interfaces(&w, &reOle, &txtDoc, NULL);
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+  first = 0, lim = 4;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  pch = 0xdeadbeef;
+  hres = ITextRange_GetChar(txtRge, &pch);
+  ok(hres == S_OK, "ITextRange_GetChar\n");
+  ok(pch == 'T', "got wrong char: %c\n", pch);
+  ITextRange_Release(txtRge);
+  release_interfaces(&w, &reOle, &txtDoc, NULL);
+
+  create_interfaces(&w, &reOle, &txtDoc, NULL);
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+  first = 0, lim = 0;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  pch = 0xdeadbeef;
+  hres = ITextRange_GetChar(txtRge, &pch);
+  ok(hres == S_OK, "ITextRange_GetChar\n");
+  ok(pch == 'T', "got wrong char: %c\n", pch);
+  ITextRange_Release(txtRge);
+  release_interfaces(&w, &reOle, &txtDoc, NULL);
+
+  create_interfaces(&w, &reOle, &txtDoc, NULL);
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+  first = 12, lim = 12;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  pch = 0xdeadbeef;
+  hres = ITextRange_GetChar(txtRge, &pch);
+  ok(hres == S_OK, "ITextRange_GetChar\n");
+  ok(pch == '\r', "got wrong char: %c\n", pch);
+  ITextRange_Release(txtRge);
+  release_interfaces(&w, &reOle, &txtDoc, NULL);
+
+  create_interfaces(&w, &reOle, &txtDoc, NULL);
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+  first = 12, lim = 12;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  hres = ITextRange_GetChar(txtRge, NULL);
+  ok(hres == E_INVALIDARG, "ITextRange_GetChar\n");
+  ITextRange_Release(txtRge);
+  release_interfaces(&w, &reOle, &txtDoc, NULL);
+}
+
 START_TEST(richole)
 {
   /* Must explicitly LoadLibrary(). The test has no references to functions in
@@ -771,4 +825,5 @@ START_TEST(richole)
   test_ITextSelection_GetChar();
   test_GetStart_GetEnd();
   test_ITextRange_GetText();
+  test_ITextRange_GetChar();
 }

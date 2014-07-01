@@ -246,6 +246,7 @@ void ME_GetOLEObjectSize(const ME_Context *c, ME_Run *run, SIZE *pSize) DECLSPEC
 void ME_CopyReObject(REOBJECT* dst, const REOBJECT* src) DECLSPEC_HIDDEN;
 void ME_DeleteReObject(REOBJECT* reo) DECLSPEC_HIDDEN;
 HRESULT ME_ITextGetText(ME_TextEditor *editor, ME_Cursor *start, ME_Cursor *end, BSTR *pb) DECLSPEC_HIDDEN;
+HRESULT ME_ITextGetChar(ME_TextEditor *editor, ME_Cursor *point, LONG *pch) DECLSPEC_HIDDEN;
 
 /* editor.c */
 ME_TextEditor *ME_MakeEditor(ITextHost *texthost, BOOL bEmulateVersion10) DECLSPEC_HIDDEN;

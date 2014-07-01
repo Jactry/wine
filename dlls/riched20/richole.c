@@ -775,8 +775,11 @@ static HRESULT WINAPI ITextRange_fnGetChar(ITextRange *me, LONG *pch)
     if (!This->reOle)
         return CO_E_RELEASED;
 
-    FIXME("not implemented %p\n", This);
-    return E_NOTIMPL;
+    TRACE("%p\n", pch);
+    if (!pch)
+        return E_INVALIDARG;
+
+    return ME_ITextGetChar(This->reOle->editor, This->start, pch);
 }
 
 static HRESULT WINAPI ITextRange_fnSetChar(ITextRange *me, LONG ch)
@@ -1554,7 +1557,6 @@ static HRESULT WINAPI ITextSelection_fnSetText(ITextSelection *me, BSTR bstr)
 static HRESULT WINAPI ITextSelection_fnGetChar(ITextSelection *me, LONG *pch)
 {
     ITextSelectionImpl *This = impl_from_ITextSelection(me);
-    WCHAR wch[2];
     ME_Cursor *start = NULL, *end = NULL;
 
     if (!This->reOle)
@@ -1563,12 +1565,7 @@ static HRESULT WINAPI ITextSelection_fnGetChar(ITextSelection *me, LONG *pch)
         return E_INVALIDARG;
 
     ME_GetSelection(This->reOle->editor, &start, &end);
-    ME_GetTextW(This->reOle->editor, wch, 1, start, 1, 0);
-    if (wch[0])
-        *pch = wch[0];
-    else
-        *pch = '\r';
-    return S_OK;
+    return ME_ITextGetChar(This->reOle->editor, start, pch);
 }
 
 static HRESULT WINAPI ITextSelection_fnSetChar(ITextSelection *me, LONG ch)
@@ -2543,5 +2540,17 @@ HRESULT ME_ITextGetText(ME_TextEditor *editor, ME_Cursor *start, ME_Cursor *end,
 
     TRACE("%s\n", wine_dbgstr_w(*pb));
 
+    return S_OK;
+}
+
+HRESULT ME_ITextGetChar(ME_TextEditor *editor, ME_Cursor *point, LONG *pch)
+{
+    WCHAR wch[2];
+
+    ME_GetTextW(editor, wch, 1, point, 1, 0);
+    if (wch[0])
+        *pch = wch[0];
+    else
+        *pch = '\r';
     return S_OK;
 }
