@@ -971,11 +971,35 @@ static HRESULT WINAPI ITextRange_fnGetStoryType(ITextRange *me, LONG *pValue)
 static HRESULT WINAPI ITextRange_fnCollapse(ITextRange *me, LONG bStart)
 {
     ITextRangeImpl *This = impl_from_ITextRange(me);
+    ME_Cursor *cursor = NULL;
+    LONG cp;
+    int isdege = ME_GetCursorOfs(This->end) - ME_GetCursorOfs(This->start);
     if (!This->reOle)
         return CO_E_RELEASED;
 
-    FIXME("not implemented %p\n", This);
-    return E_NOTIMPL;
+    if (!isdege)
+        return S_FALSE;
+    cursor = heap_alloc(sizeof(ME_Cursor));
+    if (!cursor)
+        return S_FALSE;
+
+    if (bStart == tomEnd || bStart == tomFalse)
+    {
+        cp = ME_GetCursorOfs(This->end);
+        ME_CursorFromCharOfs(This->reOle->editor, cp, cursor);
+        heap_free(This->start);
+        This->start = cursor;
+        return S_OK;
+    }
+    else
+    {
+        cp = ME_GetCursorOfs(This->start);
+        ME_CursorFromCharOfs(This->reOle->editor, cp, cursor);
+        heap_free(This->end);
+        This->end = cursor;
+        return S_OK;
+    }
+    return S_OK;
 }
 
 static HRESULT WINAPI ITextRange_fnExpand(ITextRange *me, LONG Unit, LONG *pDelta)

@@ -885,6 +885,89 @@ static void test_ITextSelection_GetDuplicate(void)
   release_interfaces(&w, &reOle, &txtDoc, NULL);
 }
 
+void static test_ITextRange_Collapse(void)
+{
+  HWND w;
+  IRichEditOle *reOle = NULL;
+  ITextDocument *txtDoc = NULL;
+  ITextRange *txtRge = NULL;
+  HRESULT hres;
+  LONG first, lim, start, end;
+  static const CHAR test_text1[] = "TestSomeText";
+
+  create_interfaces(&w, &reOle, &txtDoc, NULL);
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+
+  first = 4, lim = 8;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  hres = ITextRange_Collapse(txtRge, tomTrue);
+  ok(hres == S_OK, "ITextRange_Collapse\n");
+  ITextRange_GetStart(txtRge, &start);
+  ok(start == first, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge, &end);
+  ok(end == start, "got wrong value: %d\n", end);
+  ITextRange_Release(txtRge);
+
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  hres = ITextRange_Collapse(txtRge, tomStart);
+  ok(hres == S_OK, "ITextRange_Collapse\n");
+  ITextRange_GetStart(txtRge, &start);
+  ok(start == first, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge, &end);
+  ok(end == start, "got wrong value: %d\n", end);
+  ITextRange_Release(txtRge);
+
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  hres = ITextRange_Collapse(txtRge, tomFalse);
+  ok(hres == S_OK, "ITextRange_Collapse\n");
+  ITextRange_GetStart(txtRge, &start);
+  ok(start == lim, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge, &end);
+  ok(end == lim, "got wrong value: %d\n", end);
+  ITextRange_Release(txtRge);
+
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  hres = ITextRange_Collapse(txtRge, tomEnd);
+  ok(hres == S_OK, "ITextRange_Collapse\n");
+  ITextRange_GetStart(txtRge, &start);
+  ok(start == lim, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge, &end);
+  ok(end == lim, "got wrong value: %d\n", end);
+  ITextRange_Release(txtRge);
+
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  /* collapsing to the start is the default */
+  hres = ITextRange_Collapse(txtRge, 256);
+  ok(hres == S_OK, "ITextRange_Collapse\n");
+  ITextRange_GetStart(txtRge, &start);
+  ok(start == first, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge, &end);
+  ok(end == start, "got wrong value: %d\n", end);
+  ITextRange_Release(txtRge);
+
+  first = 6, lim = 6;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  hres = ITextRange_Collapse(txtRge, tomEnd);
+  ok(hres == S_FALSE, "ITextRange_Collapse\n");
+  ITextRange_GetStart(txtRge, &start);
+  ok(start == lim, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge, &end);
+  ok(end == lim, "got wrong value: %d\n", end);
+  ITextRange_Release(txtRge);
+
+  first = 8, lim = 8;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  hres = ITextRange_Collapse(txtRge, tomStart);
+  ok(hres == S_FALSE, "ITextRange_Collapse\n");
+  ITextRange_GetStart(txtRge, &start);
+  ok(start == lim, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge, &end);
+  ok(end == lim, "got wrong value: %d\n", end);
+  ITextRange_Release(txtRge);
+
+  release_interfaces(&w, &reOle, &txtDoc, NULL);
+}
+
 START_TEST(richole)
 {
   /* Must explicitly LoadLibrary(). The test has no references to functions in
@@ -902,4 +985,5 @@ START_TEST(richole)
   test_ITextRange_GetText();
   test_ITextRange_GetChar();
   test_ITextRange_GetDuplicate();
+  test_ITextRange_Collapse();
 }
