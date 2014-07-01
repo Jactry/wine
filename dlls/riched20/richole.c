@@ -753,8 +753,10 @@ static HRESULT WINAPI ITextRange_fnGetText(ITextRange *me, BSTR *pbstr)
     if (!This->reOle)
         return CO_E_RELEASED;
 
-    FIXME("not implemented %p\n", This->reOle);
-    return E_NOTIMPL;
+    TRACE("%p\n", pbstr);
+    if (!pbstr)
+        return E_INVALIDARG;
+    return ME_ITextGetText(This->reOle->editor, This->start, This->end, pbstr);
 }
 
 static HRESULT WINAPI ITextRange_fnSetText(ITextRange *me, BSTR bstr)
@@ -1528,8 +1530,6 @@ static HRESULT WINAPI ITextSelection_fnGetText(ITextSelection *me, BSTR *pbstr)
 {
     ITextSelectionImpl *This = impl_from_ITextSelection(me);
     ME_Cursor *start = NULL, *end = NULL;
-    LPWSTR buffer = NULL;
-    int nChars;
 
     TRACE("%p\n", pbstr);
     if (!This->reOle)
@@ -1538,24 +1538,7 @@ static HRESULT WINAPI ITextSelection_fnGetText(ITextSelection *me, BSTR *pbstr)
         return E_INVALIDARG;
 
     ME_GetSelection(This->reOle->editor, &start, &end);
-    nChars = ME_GetCursorOfs(end) - ME_GetCursorOfs(start);
-    TRACE("%p, %p, %p\n", This->reOle->editor, start, end);
-    if (!nChars)
-    {
-        *pbstr = NULL;
-        return S_OK;
-    }
-    buffer = heap_alloc((nChars + 1) * sizeof(WCHAR));
-    if (!buffer)
-        return E_OUTOFMEMORY;
-    ME_GetTextW(This->reOle->editor, buffer, nChars, start, nChars, 0);
-    buffer[nChars] = 0;
-    /* FIXME: a '\r' should be appended at the end of a story */
-    *pbstr = SysAllocString(buffer);
-    heap_free(buffer);
-
-    TRACE("%s\n", wine_dbgstr_w(*pbstr));
-    return S_OK;
+    return ME_ITextGetText(This->reOle->editor, start, end, pbstr);
 }
 
 static HRESULT WINAPI ITextSelection_fnSetText(ITextSelection *me, BSTR bstr)
@@ -2536,4 +2519,29 @@ void ME_CopyReObject(REOBJECT* dst, const REOBJECT* src)
     if (dst->poleobj)   IOleObject_AddRef(dst->poleobj);
     if (dst->pstg)      IStorage_AddRef(dst->pstg);
     if (dst->polesite)  IOleClientSite_AddRef(dst->polesite);
+}
+
+HRESULT ME_ITextGetText(ME_TextEditor *editor, ME_Cursor *start, ME_Cursor *end, BSTR *pb)
+{
+    LPWSTR buffer = NULL;
+    int nChars = ME_GetCursorOfs(end) - ME_GetCursorOfs(start);
+
+    TRACE("%p, %p, %p, %p\n", editor, start, end, pb);
+    if (!nChars)
+    {
+        *pb = NULL;
+        return S_OK;
+    }
+    buffer = heap_alloc((nChars + 1) * sizeof(WCHAR));
+    if (!buffer)
+        return E_OUTOFMEMORY;
+    ME_GetTextW(editor, buffer, nChars, start, nChars, 0);
+    buffer[nChars] = 0;
+   /* FIXME: a '\r' should be appended at the end of a story */
+    *pb = SysAllocString(buffer);
+    heap_free(buffer);
+
+    TRACE("%s\n", wine_dbgstr_w(*pb));
+
+    return S_OK;
 }

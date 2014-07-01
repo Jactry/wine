@@ -661,6 +661,102 @@ static void test_GetStart_GetEnd(void)
 
 }
 
+static void test_ITextRange_GetText(void)
+{
+  HWND w;
+  IRichEditOle *reOle = NULL;
+  ITextDocument *txtDoc = NULL;
+  ITextRange *txtRge = NULL;
+  HRESULT hres;
+  LONG first, lim;
+  BSTR bstr = NULL;
+  static const CHAR test_text1[] = "TestSomeText";
+  static const WCHAR bufW1[] = {'T', 'e', 's', 't', 0};
+  static const WCHAR bufW2[] = {'T', 'e', 'x', 't', '\r', 0};
+  static const WCHAR bufW3[] = {'T', 'e', 'x', 't', 0};
+  static const WCHAR bufW4[] = {'T', 'e', 's', 't', 'S', 'o', 'm',
+                                'e', 'T', 'e', 'x', 't', '\r', 0};
+  static const WCHAR bufW5[] = {'\r', 0};
+
+
+  create_interfaces(&w, &reOle, &txtDoc, NULL);
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+  first = 0, lim = 4;
+  hres = ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  ok(hres == S_OK, "ITextDocument_Range fails.\n");
+  hres = ITextRange_GetText(txtRge, &bstr);
+  ok(hres == S_OK, "ITextRange_GetText fails.\n");
+  ok(!lstrcmpW(bstr, bufW1), "got wrong text: %s\n", wine_dbgstr_w(bstr));
+  ITextRange_Release(txtRge);
+  release_interfaces(&w, &reOle, &txtDoc, NULL);
+
+  create_interfaces(&w, &reOle, &txtDoc, NULL);
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+  first = 4, lim = 0;
+  hres = ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  ok(hres == S_OK, "ITextDocument_Range fails.\n");
+  hres = ITextRange_GetText(txtRge, &bstr);
+  ok(hres == S_OK, "ITextRange_GetText fails.\n");
+  ok(!lstrcmpW(bstr, bufW1), "got wrong text: %s\n", wine_dbgstr_w(bstr));
+  ITextRange_Release(txtRge);
+  release_interfaces(&w, &reOle, &txtDoc, NULL);
+
+  create_interfaces(&w, &reOle, &txtDoc, NULL);
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+  first = 1, lim = 1;
+  hres = ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  ok(hres == S_OK, "ITextDocument_Range fails.\n");
+  hres = ITextRange_GetText(txtRge, &bstr);
+  ok(hres == S_OK, "ITextRange_GetText fails.\n");
+  ok(!bstr, "got wrong text: %s\n", wine_dbgstr_w(bstr));
+  ITextRange_Release(txtRge);
+  release_interfaces(&w, &reOle, &txtDoc, NULL);
+
+  create_interfaces(&w, &reOle, &txtDoc, NULL);
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+  first = 8, lim = 12;
+  hres = ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  ok(hres == S_OK, "ITextDocument_Range fails.\n");
+  hres = ITextRange_GetText(txtRge, &bstr);
+  ok(hres == S_OK, "ITextRange_GetText fails.\n");
+  ok(!lstrcmpW(bstr, bufW3), "got wrong text: %s\n", wine_dbgstr_w(bstr));
+  ITextRange_Release(txtRge);
+  release_interfaces(&w, &reOle, &txtDoc, NULL);
+
+  create_interfaces(&w, &reOle, &txtDoc, NULL);
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+  first = 8, lim = 13;
+  hres = ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  ok(hres == S_OK, "ITextDocument_Range fails.\n");
+  hres = ITextRange_GetText(txtRge, &bstr);
+  ok(hres == S_OK, "ITextRange_GetText fails.\n");
+  todo_wine ok(!lstrcmpW(bstr, bufW2), "got wrong text: %s\n", wine_dbgstr_w(bstr));
+  ITextRange_Release(txtRge);
+  release_interfaces(&w, &reOle, &txtDoc, NULL);
+
+  create_interfaces(&w, &reOle, &txtDoc, NULL);
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+  first = 12, lim = 13;
+  hres = ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  ok(hres == S_OK, "ITextDocument_Range fails.\n");
+  hres = ITextRange_GetText(txtRge, &bstr);
+  ok(hres == S_OK, "ITextRange_GetText fails.\n");
+  todo_wine ok(!lstrcmpW(bstr, bufW5), "got wrong text: %s\n", wine_dbgstr_w(bstr));
+  ITextRange_Release(txtRge);
+  release_interfaces(&w, &reOle, &txtDoc, NULL);
+
+  create_interfaces(&w, &reOle, &txtDoc, NULL);
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+  first = 0, lim = 13;
+  hres = ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  ok(hres == S_OK, "ITextDocument_Range fails.\n");
+  hres = ITextRange_GetText(txtRge, &bstr);
+  ok(hres == S_OK, "ITextRange_GetText fails.\n");
+  todo_wine ok(!lstrcmpW(bstr, bufW4), "got wrong text: %s\n", wine_dbgstr_w(bstr));
+  ITextRange_Release(txtRge);
+  release_interfaces(&w, &reOle, &txtDoc, NULL);
+}
+
 START_TEST(richole)
 {
   /* Must explicitly LoadLibrary(). The test has no references to functions in
@@ -674,4 +770,5 @@ START_TEST(richole)
   test_ITextSelection_GetText();
   test_ITextSelection_GetChar();
   test_GetStart_GetEnd();
+  test_ITextRange_GetText();
 }
