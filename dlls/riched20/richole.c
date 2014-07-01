@@ -795,11 +795,50 @@ static HRESULT WINAPI ITextRange_fnSetChar(ITextRange *me, LONG ch)
 static HRESULT WINAPI ITextRange_fnGetDuplicate(ITextRange *me, ITextRange **ppRange)
 {
     ITextRangeImpl *This = impl_from_ITextRange(me);
+    ITextRangeImpl *txtRge = NULL;
+    int cp1, cp2;
+    ME_Cursor *start = NULL, *end = NULL;
     if (!This->reOle)
         return CO_E_RELEASED;
 
-    FIXME("not implemented %p\n", This);
-    return E_NOTIMPL;
+    TRACE("%p %p\n", This, ppRange);
+    if (!ppRange)
+        return E_INVALIDARG;
+    cp1 = ME_GetCursorOfs(This->start);
+    cp2 = ME_GetCursorOfs(This->end);
+    TRACE("%d %d\n", cp1, cp2);
+
+    start = heap_alloc(sizeof(ME_Cursor));
+    if(!start)
+        return E_FAIL;
+    end = heap_alloc(sizeof(ME_Cursor));
+    if(!end)
+    {
+        heap_free(start);
+        return E_FAIL;
+    }
+    ME_CursorFromCharOfs(This->reOle->editor, cp1, start);
+    ME_CursorFromCharOfs(This->reOle->editor, cp2, end);
+
+    txtRge = heap_alloc(sizeof *txtRge);
+    if (!txtRge)
+    {
+        heap_free(start);
+        heap_free(end);
+        return E_FAIL;
+    }
+    txtRge->ITextRange_iface.lpVtbl = This->ITextRange_iface.lpVtbl;
+    txtRge->ref = 1;
+    txtRge->reOle = This->reOle;
+    txtRge->start = start;
+    txtRge->end  = end;
+    txtRge->next = headITextRange.next;
+    headITextRange.next->prev = txtRge;
+    headITextRange.next = txtRge;
+    txtRge->prev = &headITextRange;
+    *ppRange = &txtRge->ITextRange_iface;
+
+    return S_OK;
 }
 
 static HRESULT WINAPI ITextRange_fnGetFormattedText(ITextRange *me, ITextRange **ppRange)
