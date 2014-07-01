@@ -486,6 +486,49 @@ static void test_ITextSelection_GetText(void)
   release_interfaces(&w, &reOle, &txtDoc, &txtSel);
 }
 
+static void test_ITextSelection_GetChar(void)
+{
+  HWND w;
+  IRichEditOle *reOle = NULL;
+  ITextDocument *txtDoc = NULL;
+  ITextSelection *txtSel = NULL;
+  HRESULT hres;
+  LONG pch = 0xdeadbeef;
+  int first, lim;
+  static const CHAR test_text1[] = "TestSomeText";
+
+  create_interfaces(&w, &reOle, &txtDoc, &txtSel);
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+
+  first = 0, lim = 4;
+  SendMessageA(w, EM_SETSEL, first, lim);
+  pch = 0xdeadbeef;
+  hres = ITextSelection_GetChar(txtSel, &pch);
+  ok(hres == S_OK, "ITextSelection_GetChar\n");
+  ok(pch == 'T', "got wrong char: %c\n", pch);
+
+  /* the position of the first character is zero */
+  first = 0, lim = 0;
+  SendMessageA(w, EM_SETSEL, first, lim);
+  pch = 0xdeadbeef;
+  hres = ITextSelection_GetChar(txtSel, &pch);
+  ok(hres == S_OK, "ITextSelection_GetChar\n");
+  ok(pch == 'T', "got wrong char: %c\n", pch);
+
+  /* get a '\r' at the end of the story */
+  first = 12, lim = 12;
+  SendMessageA(w, EM_SETSEL, first, lim);
+  pch = 0xdeadbeef;
+  hres = ITextSelection_GetChar(txtSel, &pch);
+  ok(hres == S_OK, "ITextSelection_GetChar\n");
+  ok(pch == '\r', "got wrong char: %c\n", pch);
+
+  hres = ITextSelection_GetChar(txtSel, NULL);
+  ok(hres == E_INVALIDARG, "ITextSelection_GetChar\n");
+
+  release_interfaces(&w, &reOle, &txtDoc, &txtSel);
+}
+
 START_TEST(richole)
 {
   /* Must explicitly LoadLibrary(). The test has no references to functions in
@@ -496,4 +539,5 @@ START_TEST(richole)
   test_Interfaces();
   test_ITextDocument_Open();
   test_ITextSelection_GetText();
+  test_ITextSelection_GetChar();
 }

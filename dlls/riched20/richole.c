@@ -827,11 +827,21 @@ static HRESULT WINAPI ITextSelection_fnSetText(ITextSelection *me, BSTR bstr)
 static HRESULT WINAPI ITextSelection_fnGetChar(ITextSelection *me, LONG *pch)
 {
     ITextSelectionImpl *This = impl_from_ITextSelection(me);
+    WCHAR wch[2];
+    ME_Cursor *start = NULL, *end = NULL;
+
     if (!This->reOle)
         return CO_E_RELEASED;
+    if (!pch)
+        return E_INVALIDARG;
 
-    FIXME("not implemented\n");
-    return E_NOTIMPL;
+    ME_GetSelection(This->reOle->editor, &start, &end);
+    ME_GetTextW(This->reOle->editor, wch, 1, start, 1, 0);
+    if (wch[0])
+        *pch = wch[0];
+    else
+        *pch = '\r';
+    return S_OK;
 }
 
 static HRESULT WINAPI ITextSelection_fnSetChar(ITextSelection *me, LONG ch)
