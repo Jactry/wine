@@ -1795,11 +1795,28 @@ static HRESULT WINAPI ITextSelection_fnGetStoryType(ITextSelection *me, LONG *pV
 static HRESULT WINAPI ITextSelection_fnCollapse(ITextSelection *me, LONG bStart)
 {
     ITextSelectionImpl *This = impl_from_ITextSelection(me);
+    LONG start, end;
+    int isdege;
+
     if (!This->reOle)
         return CO_E_RELEASED;
 
-    FIXME("not implemented\n");
-    return E_NOTIMPL;
+    ME_GetSelectionOfs(This->reOle->editor, &start, &end);
+    isdege = end - start;
+    if (!isdege)
+        return S_FALSE;
+
+    if (bStart == tomEnd || bStart == tomFalse)
+    {
+        ME_SetSelection(This->reOle->editor, end, end);
+        return S_OK;
+    }
+    else
+    {
+        ME_SetSelection(This->reOle->editor, start, start);
+        return S_OK;
+    }
+    return S_OK;
 }
 
 static HRESULT WINAPI ITextSelection_fnExpand(ITextSelection *me, LONG Unit, LONG *pDelta)

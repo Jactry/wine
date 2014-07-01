@@ -968,6 +968,116 @@ void static test_ITextRange_Collapse(void)
   release_interfaces(&w, &reOle, &txtDoc, NULL);
 }
 
+static void test_ITextSelection_Collapse(void)
+{
+  HWND w;
+  IRichEditOle *reOle = NULL;
+  ITextDocument *txtDoc = NULL;
+  ITextSelection *txtSel = NULL;
+  HRESULT hres;
+  LONG first, lim, start, end;
+  static const CHAR test_text1[] = "TestSomeText";
+
+  create_interfaces(&w, &reOle, &txtDoc, &txtSel);
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+
+  first = 4, lim = 8;
+  SendMessageA(w, EM_SETSEL, first, lim);
+  hres = ITextSelection_Collapse(txtSel, tomTrue);
+  ok(hres == S_OK, "ITextSelection_Collapse\n");
+  ITextSelection_GetStart(txtSel, &start);
+  ok(start == first, "got wrong value: %d\n", start);
+  ITextSelection_GetEnd(txtSel, &end);
+  ok(end == start, "got wrong value: %d\n", end);
+  SendMessageA(w, EM_GETSEL, (WPARAM)&start, (LPARAM)&end);
+  ok(start == first, "got wrong value: %d\n", start);
+  ok(end == first, "got wrong value: %d\n", end);
+
+  SendMessageA(w, EM_SETSEL, first, lim);
+  hres = ITextSelection_Collapse(txtSel, tomStart);
+  ok(hres == S_OK, "ITextSelection_Collapse\n");
+  ITextSelection_GetStart(txtSel, &start);
+  ok(start == first, "got wrong value: %d\n", start);
+  ITextSelection_GetEnd(txtSel, &end);
+  ok(end == start, "got wrong value: %d\n", end);
+  SendMessageA(w, EM_GETSEL, (WPARAM)&start, (LPARAM)&end);
+  ok(start == first, "got wrong value: %d\n", start);
+  ok(end == first, "got wrong value: %d\n", end);
+
+  SendMessageA(w, EM_SETSEL, first, lim);
+  hres = ITextSelection_Collapse(txtSel, tomFalse);
+  ok(hres == S_OK, "ITextSelection_Collapse\n");
+  ITextSelection_GetStart(txtSel, &start);
+  ok(start == lim, "got wrong value: %d\n", start);
+  ITextSelection_GetEnd(txtSel, &end);
+  ok(end == lim, "got wrong value: %d\n", end);
+  SendMessageA(w, EM_GETSEL, (WPARAM)&start, (LPARAM)&end);
+  ok(start == lim, "got wrong value: %d\n", start);
+  ok(end == lim, "got wrong value: %d\n", end);
+
+  SendMessageA(w, EM_SETSEL, first, lim);
+  hres = ITextSelection_Collapse(txtSel, tomEnd);
+  ok(hres == S_OK, "ITextSelection_Collapse\n");
+  ITextSelection_GetStart(txtSel, &start);
+  ok(start == lim, "got wrong value: %d\n", start);
+  ITextSelection_GetEnd(txtSel, &end);
+  ok(end == lim, "got wrong value: %d\n", end);
+  SendMessageA(w, EM_GETSEL, (WPARAM)&start, (LPARAM)&end);
+  ok(start == lim, "got wrong value: %d\n", start);
+  ok(end == lim, "got wrong value: %d\n", end);
+
+  first = 6, lim = 6;
+  SendMessageA(w, EM_SETSEL, first, lim);
+  hres = ITextSelection_Collapse(txtSel, tomStart);
+  ok(hres == S_FALSE, "ITextSelection_Collapse\n");
+  ITextSelection_GetStart(txtSel, &start);
+  ok(start == lim, "got wrong value: %d\n", start);
+  ITextSelection_GetEnd(txtSel, &end);
+  ok(end == lim, "got wrong value: %d\n", end);
+  SendMessageA(w, EM_GETSEL, (WPARAM)&start, (LPARAM)&end);
+  ok(start == lim, "got wrong value: %d\n", start);
+  ok(end == lim, "got wrong value: %d\n", end);
+
+  first = 8, lim = 8;
+  SendMessageA(w, EM_SETSEL, first, lim);
+  hres = ITextSelection_Collapse(txtSel, tomEnd);
+  ok(hres == S_FALSE, "ITextSelection_Collapse\n");
+  ITextSelection_GetStart(txtSel, &start);
+  ok(start == lim, "got wrong value: %d\n", start);
+  ITextSelection_GetEnd(txtSel, &end);
+  ok(end == lim, "got wrong value: %d\n", end);
+  SendMessageA(w, EM_GETSEL, (WPARAM)&start, (LPARAM)&end);
+  ok(start == lim, "got wrong value: %d\n", start);
+  ok(end == lim, "got wrong value: %d\n", end);
+
+  first = 4, lim = 8;
+  SendMessageA(w, EM_SETSEL, first, lim);
+  /* collapsing to the start is the default */
+  hres = ITextSelection_Collapse(txtSel, 256);
+  ok(hres == S_OK, "ITextSelection_Collapse\n");
+  ITextSelection_GetStart(txtSel, &start);
+  ok(start == first, "got wrong value: %d\n", start);
+  ITextSelection_GetEnd(txtSel, &end);
+  ok(end == first, "got wrong value: %d\n", end);
+  SendMessageA(w, EM_GETSEL, (WPARAM)&start, (LPARAM)&end);
+  ok(start == first, "got wrong value: %d\n", start);
+  ok(end == first, "got wrong value: %d\n", end);
+
+  first = 8, lim = 4;
+  SendMessageA(w, EM_SETSEL, first, lim);
+  hres = ITextSelection_Collapse(txtSel, tomTrue);
+  ok(hres == S_OK, "ITextSelection_Collapse\n");
+  ITextSelection_GetStart(txtSel, &start);
+  ok(start == lim, "got wrong value: %d\n", start);
+  ITextSelection_GetEnd(txtSel, &end);
+  ok(end == lim, "got wrong value: %d\n", end);
+  SendMessageA(w, EM_GETSEL, (WPARAM)&start, (LPARAM)&end);
+  ok(start == lim, "got wrong value: %d\n", start);
+  ok(end == lim, "got wrong value: %d\n", end);
+
+  release_interfaces(&w, &reOle, &txtDoc, &txtSel);
+}
+
 START_TEST(richole)
 {
   /* Must explicitly LoadLibrary(). The test has no references to functions in
@@ -981,6 +1091,7 @@ START_TEST(richole)
   test_ITextSelection_GetText();
   test_ITextSelection_GetChar();
   test_ITextSelection_GetDuplicate();
+  test_ITextSelection_Collapse();
   test_GetStart_GetEnd();
   test_ITextRange_GetText();
   test_ITextRange_GetChar();
