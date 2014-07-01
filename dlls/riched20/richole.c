@@ -783,11 +783,35 @@ static HRESULT WINAPI ITextSelection_fnInvoke(
 static HRESULT WINAPI ITextSelection_fnGetText(ITextSelection *me, BSTR *pbstr)
 {
     ITextSelectionImpl *This = impl_from_ITextSelection(me);
+    ME_Cursor *start = NULL, *end = NULL;
+    LPWSTR buffer = NULL;
+    int nChars;
+
+    TRACE("%p\n", pbstr);
     if (!This->reOle)
         return CO_E_RELEASED;
+    if (!pbstr)
+        return E_INVALIDARG;
 
-    FIXME("not implemented\n");
-    return E_NOTIMPL;
+    ME_GetSelection(This->reOle->editor, &start, &end);
+    nChars = ME_GetCursorOfs(end) - ME_GetCursorOfs(start);
+    TRACE("%p, %p, %p\n", This->reOle->editor, start, end);
+    if (!nChars)
+    {
+        *pbstr = NULL;
+        return S_OK;
+    }
+    buffer = heap_alloc((nChars + 1) * sizeof(WCHAR));
+    if (!buffer)
+        return E_OUTOFMEMORY;
+    ME_GetTextW(This->reOle->editor, buffer, nChars, start, nChars, 0);
+    buffer[nChars] = 0;
+    /* FIXME: a '\r' should be appended at the end of a story */
+    *pbstr = SysAllocString(buffer);
+    heap_free(buffer);
+
+    TRACE("%s\n", wine_dbgstr_w(*pbstr));
+    return S_OK;
 }
 
 static HRESULT WINAPI ITextSelection_fnSetText(ITextSelection *me, BSTR bstr)
