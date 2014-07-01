@@ -1620,11 +1620,21 @@ static HRESULT WINAPI ITextSelection_fnSetChar(ITextSelection *me, LONG ch)
 static HRESULT WINAPI ITextSelection_fnGetDuplicate(ITextSelection *me, ITextRange **ppRange)
 {
     ITextSelectionImpl *This = impl_from_ITextSelection(me);
+    int cp1, cp2;
+    HRESULT hres;
+
     if (!This->reOle)
         return CO_E_RELEASED;
+    if (!ppRange)
+        return E_INVALIDARG;
 
-    FIXME("not implemented\n");
-    return E_NOTIMPL;
+    ME_GetSelectionOfs(This->reOle->editor, &cp1, &cp2);
+    TRACE("%d, %d\n", cp1, cp2);
+
+    hres = ITextDocument_fnRange(&This->reOle->ITextDocument_iface, cp1, cp2, ppRange);
+    if (hres == E_OUTOFMEMORY)
+        return E_FAIL;
+    return hres;
 }
 
 static HRESULT WINAPI ITextSelection_fnGetFormattedText(ITextSelection *me, ITextRange **ppRange)

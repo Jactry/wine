@@ -845,6 +845,46 @@ static void test_ITextRange_GetDuplicate(void)
   release_interfaces(&w, &reOle, &txtDoc, NULL);
 }
 
+static void test_ITextSelection_GetDuplicate(void)
+{
+  HWND w;
+  IRichEditOle *reOle = NULL;
+  ITextDocument *txtDoc = NULL;
+  ITextSelection *txtSel = NULL;
+  ITextRange *txtRge = NULL, *pointer = NULL;
+  HRESULT hres;
+  LONG first, lim, start, end;
+  static const CHAR test_text1[] = "TestSomeText";
+
+  create_interfaces(&w, &reOle, &txtDoc, &txtSel);
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+
+  first = 0, lim = 4;
+  SendMessageA(w, EM_SETSEL, first, lim);
+  hres = ITextSelection_GetDuplicate(txtSel, &txtRge);
+  ok(hres == S_OK, "ITextSelection_GetDuplicate\n");
+  ITextRange_GetStart(txtRge, &start);
+  ok(start == first, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge, &end);
+  ok(end == lim, "got wrong value: %d\n", end);
+
+  hres = ITextSelection_GetDuplicate(txtSel, &pointer);
+  ok(hres == S_OK, "ITextSelection_GetDuplicate\n");
+  ok(pointer != txtRge, "A new pointer should be returned\n");
+  ITextRange_GetStart(pointer, &start);
+  ok(start == first, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(pointer, &end);
+  ok(end == lim, "got wrong value: %d\n", end);
+
+  ITextRange_Release(pointer);
+  ITextRange_Release(txtRge);
+
+  hres = ITextSelection_GetDuplicate(txtSel, NULL);
+  ok(hres == E_INVALIDARG, "ITextSelection_GetDuplicate\n");
+
+  release_interfaces(&w, &reOle, &txtDoc, NULL);
+}
+
 START_TEST(richole)
 {
   /* Must explicitly LoadLibrary(). The test has no references to functions in
@@ -857,6 +897,7 @@ START_TEST(richole)
   test_ITextDocument_Range();
   test_ITextSelection_GetText();
   test_ITextSelection_GetChar();
+  test_ITextSelection_GetDuplicate();
   test_GetStart_GetEnd();
   test_ITextRange_GetText();
   test_ITextRange_GetChar();
