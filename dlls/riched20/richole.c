@@ -823,8 +823,11 @@ static HRESULT WINAPI ITextRange_fnGetStart(ITextRange *me, LONG *pcpFirst)
     if (!This->reOle)
         return CO_E_RELEASED;
 
-    FIXME("not implemented %p\n", This);
-    return E_NOTIMPL;
+    if (!pcpFirst)
+        return E_INVALIDARG;
+    *pcpFirst = ME_GetCursorOfs(This->start);
+    TRACE("%d\n", *pcpFirst);
+    return S_OK;
 }
 
 static HRESULT WINAPI ITextRange_fnSetStart(ITextRange *me, LONG cpFirst)
@@ -843,8 +846,12 @@ static HRESULT WINAPI ITextRange_fnGetEnd(ITextRange *me, LONG *pcpLim)
     if (!This->reOle)
         return CO_E_RELEASED;
 
-    FIXME("not implemented %p\n", This);
-    return E_NOTIMPL;
+    if (!pcpLim)
+        return E_INVALIDARG;
+    *pcpLim = ME_GetCursorOfs(This->end);
+    FIXME("Didn't include '\\r' at the end of story\n");
+    TRACE("%d\n", *pcpLim);
+    return S_OK;
 }
 
 static HRESULT WINAPI ITextRange_fnSetEnd(ITextRange *me, LONG cpLim)
@@ -1624,11 +1631,16 @@ static HRESULT WINAPI ITextSelection_fnSetFormattedText(ITextSelection *me, ITex
 static HRESULT WINAPI ITextSelection_fnGetStart(ITextSelection *me, LONG *pcpFirst)
 {
     ITextSelectionImpl *This = impl_from_ITextSelection(me);
+    int first, lim;
     if (!This->reOle)
         return CO_E_RELEASED;
 
-    FIXME("not implemented\n");
-    return E_NOTIMPL;
+    if (!pcpFirst)
+        return E_INVALIDARG;
+    ME_GetSelectionOfs(This->reOle->editor, &first, &lim);
+    *pcpFirst = first;
+    TRACE("%d\n", *pcpFirst);
+    return S_OK;
 }
 
 static HRESULT WINAPI ITextSelection_fnSetStart(ITextSelection *me, LONG cpFirst)
@@ -1644,11 +1656,17 @@ static HRESULT WINAPI ITextSelection_fnSetStart(ITextSelection *me, LONG cpFirst
 static HRESULT WINAPI ITextSelection_fnGetEnd(ITextSelection *me, LONG *pcpLim)
 {
     ITextSelectionImpl *This = impl_from_ITextSelection(me);
+    int first, lim;
     if (!This->reOle)
         return CO_E_RELEASED;
 
-    FIXME("not implemented\n");
-    return E_NOTIMPL;
+    if (!pcpLim)
+        return E_INVALIDARG;
+    ME_GetSelectionOfs(This->reOle->editor, &first, &lim);
+    *pcpLim = lim;
+    FIXME("Didn't include '\\r' at the end of story\n");
+    TRACE("%d\n", *pcpLim);
+    return S_OK;
 }
 
 static HRESULT WINAPI ITextSelection_fnSetEnd(ITextSelection *me, LONG cpLim)
