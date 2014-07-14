@@ -1236,15 +1236,126 @@ static HRESULT WINAPI ITextRange_fnFindTextEnd(ITextRange *me, BSTR bstr, LONG c
     return E_NOTIMPL;
 }
 
+static void adapt_range(ITextRangeImpl *cursor, LONG cp1, LONG cp2, LONG len)
+{
+    LONG start, end;
+
+    ITextRange_GetStart(&cursor->ITextRange_iface, &start);
+    ITextRange_GetEnd(&cursor->ITextRange_iface, &end);
+    TRACE("start: %d, end: %d\n", start, end);
+    /* the range behinds the deleted range */
+    if (start >= cp2)
+    {
+        ME_Cursor *new_start = heap_alloc(sizeof(ME_Cursor));
+        ME_Cursor *new_end = heap_alloc(sizeof(ME_Cursor));
+        heap_free(cursor->start);
+        heap_free(cursor->end);
+        ME_CursorFromCharOfs(cursor->reOle->editor, start - len, new_start);
+        ME_CursorFromCharOfs(cursor->reOle->editor, end - len, new_end);
+        cursor->start = new_start;
+        cursor->end = new_end;
+    }
+    /* the start of the range is in the deleted range */
+    if (start > cp1 && start < cp2)
+    {
+        ME_Cursor *new_start = heap_alloc(sizeof(ME_Cursor));
+        ME_Cursor *new_end = heap_alloc(sizeof(ME_Cursor));
+        heap_free(cursor->start);
+        heap_free(cursor->end);
+        ME_CursorFromCharOfs(cursor->reOle->editor, cp1, new_start);
+        ME_CursorFromCharOfs(cursor->reOle->editor, end - len, new_end);
+        cursor->start = new_start;
+        cursor->end = new_end;
+    }
+    /* the end of the range is in the deleted range */
+    if (end > cp1 && end < cp2)
+    {
+        ME_Cursor *new_end = heap_alloc(sizeof(ME_Cursor));
+        heap_free(cursor->end);
+        ME_CursorFromCharOfs(cursor->reOle->editor, cp1, new_end);
+        cursor->end = new_end;
+    }
+    /* the range is in the deleted range */
+    if (start >= cp1 && end <= cp2)
+    {
+        ME_Cursor *new_start = heap_alloc(sizeof(ME_Cursor));
+        ME_Cursor *new_end = heap_alloc(sizeof(ME_Cursor));
+        heap_free(cursor->start);
+        heap_free(cursor->end);
+        ME_CursorFromCharOfs(cursor->reOle->editor, cp1, new_start);
+        ME_CursorFromCharOfs(cursor->reOle->editor, cp1, new_end);
+        cursor->start = new_start;
+        cursor->end = new_end;
+    }
+    /* the range includes the deleted range */
+    if (start < cp1 && end > cp2)
+    {
+        ME_Cursor *new_end = heap_alloc(sizeof(ME_Cursor));
+        heap_free(cursor->end);
+        ME_CursorFromCharOfs(cursor->reOle->editor, end - len, new_end);
+        cursor->end = new_end;
+    }
+}
+
+static void adapt_all_range(ITextRangeImpl *This, LONG cp1, LONG cp2, LONG len)
+{
+    ITextRangeImpl *cursor;
+
+    TRACE("%d, %d\n", cp1, cp2);
+    cursor = This->next;
+    while (cursor->next)
+    {
+        adapt_range(cursor, cp1, cp2, len);
+        cursor = cursor->next;
+    }
+
+    cursor = This->prev;
+    while (cursor->prev)
+    {
+        adapt_range(cursor, cp1, cp2, len);
+        cursor = cursor->prev;
+    }
+}
+
 static HRESULT WINAPI ITextRange_fnDelete(ITextRange *me, LONG Unit, LONG Count,
                                           LONG *pDelta)
 {
     ITextRangeImpl *This = impl_from_ITextRange(me);
+    LONG start = ME_GetCursorOfs(This->start), end = ME_GetCursorOfs(This->end);
+    int len = end - start;
     if (!This->reOle)
         return CO_E_RELEASED;
 
-    FIXME("not implemented %p\n", This);
-    return E_NOTIMPL;
+    TRACE("%d, %d, %p\n", Unit, Count, pDelta);
+    if (!len)
+    {
+       if (pDelta)
+           *pDelta = 0;
+        return S_FALSE;
+    }
+    if (Count == 0 || Count == 1)
+    {
+        adapt_all_range(This, start, end, len);
+        ME_InternalDeleteText(This->reOle->editor, This->start, len, 1);
+        ITextRange_fnCollapse(&This->ITextRange_iface, tomStart);
+        if (pDelta)
+            *pDelta = 1;
+        return S_OK;
+    }
+    else if (Count == -1)
+    {
+        adapt_all_range(This, start, end, len);
+        ME_InternalDeleteText(This->reOle->editor, This->start, len, 1);
+        ITextRange_fnCollapse(&This->ITextRange_iface, tomStart);
+        if (pDelta)
+            *pDelta = -1;
+        return S_OK;
+    }
+    else
+    {
+        FIXME("not support Count more than 1 or less than -1: %d\n", Count);
+        return E_NOTIMPL;
+    }
 }
 
 static HRESULT WINAPI ITextRange_fnCut(ITextRange *me, VARIANT *pVar)

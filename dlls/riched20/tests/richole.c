@@ -1078,6 +1078,212 @@ static void test_ITextSelection_Collapse(void)
   release_interfaces(&w, &reOle, &txtDoc, &txtSel);
 }
 
+static void test_ITextRange_Delete(void)
+{
+  HWND w;
+  IRichEditOle *reOle = NULL;
+  ITextDocument *txtDoc = NULL;
+  ITextRange *txtRge = NULL, *txtRge1 = NULL;
+  HRESULT hres;
+  LONG delcount;
+  LONG first, lim, start, end;
+  static const CHAR test_text1[] = "TestSomeText";
+  BSTR bstr;
+  static const WCHAR text1[] = {'T', 'e', 'x', 't', 0};
+  static const WCHAR text2[] = {'s', 't', 0};
+  static const WCHAR text3[] = {'s', 't', 'T', 'e', 0};
+  static const CHAR text4[] = "TestSomeText";
+  CHAR buf[1024];
+
+  create_interfaces(&w, &reOle, &txtDoc, NULL);
+
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+  first = 4, lim = 8;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  /* the range bebinds the deleted range */
+  first = 8, lim = 12;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge1);
+
+  hres = ITextRange_Delete(txtRge, 0, 0, &delcount);
+  ok(hres == S_OK, "ITextRange_Delete\n");
+  ok(delcount == 1, "got wrong count: %d\n", delcount);
+  ITextRange_GetStart(txtRge1, &start);
+  ok(start == 4, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge1, &end);
+  ok(end == 8, "got wrong value: %d\n", end);
+  ITextRange_GetStart(txtRge, &start);
+  ok(start == 4, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge, &end);
+  ok(end == 4, "got wrong value: %d\n", end);
+  ITextRange_GetText(txtRge1, &bstr);
+  ok(!lstrcmpW(text1, bstr), "got wrong text: %s\n", wine_dbgstr_w(bstr));
+
+  ITextRange_Release(txtRge);
+  ITextRange_Release(txtRge1);
+
+
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+  first = 4, lim = 8;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  /* the start of the range is in the deleted range */
+  first = 6, lim = 12;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge1);
+
+  hres = ITextRange_Delete(txtRge, 0, 0, &delcount);
+  ok(hres == S_OK, "ITextRange_Delete\n");
+  ok(delcount == 1, "got wrong count: %d\n", delcount);
+  ITextRange_GetStart(txtRge1, &start);
+  ok(start == 4, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge1, &end);
+  ok(end == 8, "got wrong value: %d\n", end);
+  ITextRange_GetStart(txtRge, &start);
+  ok(start == 4, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge, &end);
+  ok(end == 4, "got wrong value: %d\n", end);
+  ITextRange_GetText(txtRge1, &bstr);
+  ok(!lstrcmpW(text1, bstr), "got wrong text: %s\n", wine_dbgstr_w(bstr));
+
+  ITextRange_Release(txtRge);
+  ITextRange_Release(txtRge1);
+
+
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+  first = 4, lim = 8;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  /* the end of the range is in the deleted range */
+  first = 2, lim = 6;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge1);
+
+  hres = ITextRange_Delete(txtRge, 0, 0, &delcount);
+  ok(hres == S_OK, "ITextRange_Delete\n");
+  ok(delcount == 1, "got wrong count: %d\n", delcount);
+  ITextRange_GetStart(txtRge1, &start);
+  ok(start == 2, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge1, &end);
+  ok(end == 4, "got wrong value: %d\n", end);
+  ITextRange_GetStart(txtRge, &start);
+  ok(start == 4, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge, &end);
+  ok(end == 4, "got wrong value: %d\n", end);
+  ITextRange_GetText(txtRge1, &bstr);
+  ok(!lstrcmpW(text2, bstr), "got wrong text: %s\n", wine_dbgstr_w(bstr));
+
+  ITextRange_Release(txtRge);
+  ITextRange_Release(txtRge1);
+
+
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+  first = 4, lim = 8;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+
+  first = 2, lim = 4;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge1);
+  /* the range is in front of the deleted range */
+  hres = ITextRange_Delete(txtRge, 0, 0, &delcount);
+  ok(hres == S_OK, "ITextRange_Delete\n");
+  ok(delcount == 1, "got wrong count: %d\n", delcount);
+  ITextRange_GetStart(txtRge1, &start);
+  ok(start == 2, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge1, &end);
+  ok(end == 4, "got wrong value: %d\n", end);
+  ITextRange_GetStart(txtRge, &start);
+  ok(start == 4, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge, &end);
+  ok(end == 4, "got wrong value: %d\n", end);
+  ITextRange_GetText(txtRge1, &bstr);
+  ok(!lstrcmpW(text2, bstr), "got wrong text: %s\n", wine_dbgstr_w(bstr));
+
+  ITextRange_Release(txtRge);
+  ITextRange_Release(txtRge1);
+
+
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+  first = 4, lim = 8;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  /* the range is in the deleted range */
+  first = 5, lim = 6;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge1);
+
+  hres = ITextRange_Delete(txtRge, 0, 0, &delcount);
+  ok(hres == S_OK, "ITextRange_Delete\n");
+  ok(delcount == 1, "got wrong count: %d\n", delcount);
+  ITextRange_GetStart(txtRge1, &start);
+  ok(start == 4, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge1, &end);
+  ok(end == 4, "got wrong value: %d\n", end);
+  ITextRange_GetStart(txtRge, &start);
+  ok(start == 4, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge, &end);
+  ok(end == 4, "got wrong value: %d\n", end);
+  ITextRange_GetText(txtRge1, &bstr);
+  ok(!bstr, "got wrong text: %s\n", wine_dbgstr_w(bstr));
+
+  ITextRange_Release(txtRge);
+  ITextRange_Release(txtRge1);
+
+
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+  first = 4, lim = 8;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  /* the range includes the deleted range */
+  first = 2, lim = 10;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge1);
+
+  hres = ITextRange_Delete(txtRge, 0, 0, &delcount);
+  ok(hres == S_OK, "ITextRange_Delete\n");
+  ok(delcount == 1, "got wrong count: %d\n", delcount);
+  ITextRange_GetStart(txtRge1, &start);
+  ok(start == 2, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge1, &end);
+  ok(end == 6, "got wrong value: %d\n", end);
+  ITextRange_GetStart(txtRge, &start);
+  ok(start == 4, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge, &end);
+  ok(end == 4, "got wrong value: %d\n", end);
+  ITextRange_GetText(txtRge1, &bstr);
+  ok(!lstrcmpW(text3, bstr), "got wrong text: %s\n", wine_dbgstr_w(bstr));
+
+  ITextRange_Release(txtRge);
+  ITextRange_Release(txtRge1);
+
+
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+  first = 2, lim = 2;
+  /* a degenerate range */
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+
+  hres = ITextRange_Delete(txtRge, 0, 0, &delcount);
+  ok(hres == S_FALSE , "ITextRange_Delete: %x\n", hres);
+  ok(delcount == 0, "got wrong count: %d\n", delcount);
+  ITextRange_GetStart(txtRge, &start);
+  ok(start == 2, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge, &end);
+  ok(end == 2, "got wrong value: %d\n", end);
+  SendMessageA(w, WM_GETTEXT, 1024, (LPARAM)buf);
+  ok(!strcmp(buf, text4), "got wrong text: %s\n", buf);
+
+  ITextRange_Release(txtRge);
+
+
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+  first = 12, lim = 4;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+
+  hres = ITextRange_Delete(txtRge, 0, -1, &delcount);
+  ok(hres == S_OK , "ITextRange_Delete: %x\n", hres);
+  ok(delcount == -1, "got wrong count: %d\n", delcount);
+  ITextRange_GetStart(txtRge, &start);
+  ok(start == 4, "got wrong value: %d\n", start);
+  ITextRange_GetEnd(txtRge, &end);
+  ok(end == 4, "got wrong value: %d\n", end);
+  SendMessageA(w, WM_GETTEXT, 1024, (LPARAM)buf);
+  ok(!strcmp(buf, "Test"), "got wrong text: %s\n", buf);
+
+  SysFreeString(bstr);
+  ITextRange_Release(txtRge);
+  release_interfaces(&w, &reOle, &txtDoc, NULL);
+}
+
 START_TEST(richole)
 {
   /* Must explicitly LoadLibrary(). The test has no references to functions in
@@ -1097,4 +1303,5 @@ START_TEST(richole)
   test_ITextRange_GetChar();
   test_ITextRange_GetDuplicate();
   test_ITextRange_Collapse();
+  test_ITextRange_Delete();
 }
