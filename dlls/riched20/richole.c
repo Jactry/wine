@@ -877,11 +877,31 @@ static HRESULT WINAPI ITextRange_fnGetStart(ITextRange *me, LONG *pcpFirst)
 static HRESULT WINAPI ITextRange_fnSetStart(ITextRange *me, LONG cpFirst)
 {
     ITextRangeImpl *This = impl_from_ITextRange(me);
+    ME_Cursor *new_start;
+    int start = ME_GetCursorOfs(This->start), end = ME_GetCursorOfs(This->end);
+    int len = ME_GetTextLength(This->reOle->editor);
     if (!This->reOle)
         return CO_E_RELEASED;
 
-    FIXME("not implemented %p\n", This);
-    return E_NOTIMPL;
+    TRACE("%d\n", cpFirst);
+    if (cpFirst == start)
+        return S_FALSE;
+    if (cpFirst > len)
+        cpFirst = len;
+    if (cpFirst < 0)
+        cpFirst = 0;
+    if (cpFirst > end)
+    {
+        ME_Cursor *new_end = heap_alloc(sizeof(ME_Cursor));
+        heap_free(This->end);
+        ME_CursorFromCharOfs(This->reOle->editor, cpFirst, new_end);
+        This->end = new_end;
+    }
+    heap_free(This->start);
+    new_start = heap_alloc(sizeof(ME_Cursor));
+    ME_CursorFromCharOfs(This->reOle->editor, cpFirst, new_start);
+    This->start = new_start;
+    return S_OK;
 }
 
 static HRESULT WINAPI ITextRange_fnGetEnd(ITextRange *me, LONG *pcpLim)
@@ -901,11 +921,31 @@ static HRESULT WINAPI ITextRange_fnGetEnd(ITextRange *me, LONG *pcpLim)
 static HRESULT WINAPI ITextRange_fnSetEnd(ITextRange *me, LONG cpLim)
 {
     ITextRangeImpl *This = impl_from_ITextRange(me);
+    ME_Cursor *new_end;
+    int start = ME_GetCursorOfs(This->start), end = ME_GetCursorOfs(This->end);
+    int len = ME_GetTextLength(This->reOle->editor) + 1;
     if (!This->reOle)
         return CO_E_RELEASED;
 
-    FIXME("not implemented %p\n", This);
-    return E_NOTIMPL;
+    TRACE("%d\n", cpLim);
+    if (cpLim == end)
+        return S_FALSE;
+    if (cpLim > len)
+        cpLim = len;
+    if (cpLim < 0)
+        cpLim = 0;
+    if (cpLim < start)
+    {
+        ME_Cursor *new_start = heap_alloc(sizeof(ME_Cursor));
+        heap_free(This->start);
+        ME_CursorFromCharOfs(This->reOle->editor, cpLim, new_start);
+        This->start = new_start;
+    }
+    heap_free(This->end);
+    new_end = heap_alloc(sizeof(ME_Cursor));
+    ME_CursorFromCharOfs(This->reOle->editor, cpLim, new_end);
+    This->end = new_end;
+    return S_OK;
 }
 
 static HRESULT WINAPI ITextRange_fnGetFont(ITextRange *me, ITextFont **pFont)
