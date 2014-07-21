@@ -1423,6 +1423,47 @@ static void test_ITextRange_GetFont(void)
   release_interfaces(&w, &reOle, &txtDoc, NULL);
 }
 
+static void test_ITextRange_GetPara(void)
+{
+  HWND w;
+  IRichEditOle *reOle = NULL;
+  ITextDocument *txtDoc = NULL;
+  ITextRange *txtRge = NULL;
+  ITextPara *txtPara = NULL, *txtPara1 = NULL;
+  HRESULT hres;
+  int first, lim;
+  int refcount;
+  static const CHAR test_text1[] = "TestSomeText";
+
+  create_interfaces(&w, &reOle, &txtDoc, NULL);
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+
+  first = 4, lim = 4;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  refcount = get_refcount((IUnknown *)txtRge);
+  ok(refcount == 1, "got wrong ref count: %d\n", refcount);
+
+  hres = ITextRange_GetPara(txtRge, &txtPara);
+  ok(hres == S_OK, "ITextRange_GetPara\n");
+  refcount = get_refcount((IUnknown *)txtPara);
+  ok(refcount == 1, "got wrong ref count: %d\n", refcount);
+  refcount = get_refcount((IUnknown *)txtRge);
+  ok(refcount == 2, "got wrong ref count: %d\n", refcount);
+
+  hres = ITextRange_GetPara(txtRge, &txtPara1);
+  ok(hres == S_OK, "ITextRange_GetPara\n");
+  ok(txtPara1 != txtPara, "A new pointer should be return\n");
+  refcount = get_refcount((IUnknown *)txtPara1);
+  ok(refcount == 1, "got wrong ref count: %d\n", refcount);
+  ITextPara_Release(txtPara1);
+  refcount = get_refcount((IUnknown *)txtRge);
+  ok(refcount == 2, "got wrong ref count: %d\n", refcount);
+
+  ITextPara_Release(txtPara);
+  ITextRange_Release(txtRge);
+  release_interfaces(&w, &reOle, &txtDoc, NULL);
+}
+
 START_TEST(richole)
 {
   /* Must explicitly LoadLibrary(). The test has no references to functions in
@@ -1446,4 +1487,5 @@ START_TEST(richole)
   test_ITextRange_SetStart();
   test_ITextRange_SetEnd();
   test_ITextRange_GetFont();
+  test_ITextRange_GetPara();
 }
