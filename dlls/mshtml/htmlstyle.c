@@ -2482,6 +2482,8 @@ static HRESULT WINAPI HTMLStyle_get_pixelLeft(IHTMLStyle *iface, LONG *p)
     HTMLStyle *This = impl_from_IHTMLStyle(iface);
 
     TRACE("(%p)->(%p)\n", This, p);
+    if(!p)
+        return E_POINTER;
 
     return get_nsstyle_pixel_val(This, STYLEID_LEFT, p);
 }
