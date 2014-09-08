@@ -2511,15 +2511,21 @@ static HRESULT WINAPI HTMLStyle_get_pixelWidth(IHTMLStyle *iface, LONG *p)
 static HRESULT WINAPI HTMLStyle_put_pixelHeight(IHTMLStyle *iface, LONG v)
 {
     HTMLStyle *This = impl_from_IHTMLStyle(iface);
-    FIXME("(%p)->()\n", This);
-    return E_NOTIMPL;
+
+    TRACE("(%p)->()\n", This);
+
+    return set_style_pxattr(This->nsstyle, STYLEID_HEIGHT, v);
 }
 
 static HRESULT WINAPI HTMLStyle_get_pixelHeight(IHTMLStyle *iface, LONG *p)
 {
     HTMLStyle *This = impl_from_IHTMLStyle(iface);
-    FIXME("(%p)->()\n", This);
-    return E_NOTIMPL;
+
+    TRACE("(%p)->(%p)\n", This, p);
+    if(!p)
+        return E_POINTER;
+
+    return get_nsstyle_pixel_val(This, STYLEID_HEIGHT, p);
 }
 
 static HRESULT WINAPI HTMLStyle_put_posTop(IHTMLStyle *iface, float v)
