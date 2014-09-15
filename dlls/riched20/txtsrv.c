@@ -33,6 +33,9 @@
 #include "textserv.h"
 #include "wine/debug.h"
 #include "editstr.h"
+#include "tom.h"
+
+DEFINE_GUID(IID_ITextDocument, 0x8cc497c0, 0xa1df, 0x11ce, 0x80, 0x98, 0x00, 0xaa, 0x00, 0x47, 0xbe, 0x5d);
 
 #ifdef __i386__  /* thiscall functions are i386-specific */
 
@@ -79,6 +82,21 @@ static HRESULT WINAPI ITextServicesImpl_QueryInterface(IUnknown *iface, REFIID r
       *ppv = &This->IUnknown_inner;
    else if (IsEqualIID(riid, &IID_ITextServices))
       *ppv = &This->ITextServices_iface;
+   else if (IsEqualIID(riid, &IID_ITextDocument))
+     {
+       ITextDocument *txtDoc = heap_alloc(sizeof(ITextDocument));
+       if (!This->editor->reOle)
+       {
+           CreateIRichEditOle(This->editor, (LPVOID *)&(This->editor->reOle));
+           IRichEditOle_QueryInterface(This->editor->reOle, &IID_ITextDocument, (void **) &txtDoc);
+           *ppv = (void **)txtDoc;
+       }
+       else
+       {
+           IRichEditOle_QueryInterface(This->editor->reOle, &IID_ITextDocument, (void **) &txtDoc);
+           *ppv = (void **)txtDoc;
+       }
+     }
    else {
       *ppv = NULL;
       FIXME("Unknown interface: %s\n", debugstr_guid(riid));
