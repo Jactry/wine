@@ -52,8 +52,10 @@ typedef struct IOleClientSiteImpl IOleClientSiteImpl;
 typedef struct ITextRangeImpl ITextRangeImpl;
 
 typedef struct IRichEditOleImpl {
+    IUnknown IUnknown_inner;
     IRichEditOle IRichEditOle_iface;
     ITextDocument ITextDocument_iface;
+    IUnknown *outer_unk;
     LONG ref;
 
     ME_TextEditor *editor;
@@ -85,6 +87,71 @@ struct IOleClientSiteImpl {
     IRichEditOleImpl *reOle;
 };
 
+static inline IRichEditOleImpl *impl_from_IUnknown(IUnknown *iface)
+{
+    return CONTAINING_RECORD(iface, IRichEditOleImpl, IUnknown_inner);
+}
+
+static HRESULT WINAPI IRichEditOleImpl_fnQueryInterface(IUnknown *iface, REFIID riid, LPVOID* ppvObj)
+{
+    IRichEditOleImpl *This = impl_from_IUnknown(iface);
+
+    TRACE("(%p)->(%s, %p)\n", This, debugstr_guid(riid), ppvObj);
+
+    if (IsEqualGUID(riid, &IID_IUnknown))
+        *ppvObj = &This->IUnknown_inner;
+    else if (IsEqualGUID(riid, &IID_IRichEditOle))
+        *ppvObj = &This->IRichEditOle_iface;
+    else if (IsEqualGUID(riid, &IID_ITextDocument))
+        *ppvObj = &This->ITextDocument_iface;
+    else {
+        FIXME("%p: unhandled interface %s\n", This, debugstr_guid(riid));
+        return E_NOINTERFACE;
+    }
+
+    IUnknown_AddRef((IUnknown *)*ppvObj);
+    return S_OK;
+}
+
+static ULONG WINAPI IRichEditOleImpl_fnAddRef(IUnknown *iface)
+{
+    IRichEditOleImpl *This = impl_from_IUnknown(iface);
+    ULONG ref = InterlockedIncrement(&This->ref);
+
+    TRACE("%p ref = %u\n", This, ref);
+
+    return ref;
+}
+
+static ULONG WINAPI IRichEditOleImpl_fnRelease(IUnknown *iface)
+{
+    IRichEditOleImpl *This = impl_from_IUnknown(iface);
+    ULONG ref = InterlockedDecrement(&This->ref);
+
+    TRACE ("%p ref=%u\n", This, ref);
+
+    if (!ref)
+    {
+        ITextRangeImpl *txtRge;
+        TRACE ("Destroying %p\n", This);
+        This->txtSel->reOle = NULL;
+        This->editor->reOle = NULL;
+        ITextSelection_Release(&This->txtSel->ITextSelection_iface);
+        IOleClientSite_Release(&This->clientSite->IOleClientSite_iface);
+        LIST_FOR_EACH_ENTRY(txtRge, &This->rangelist, ITextRangeImpl, entry)
+            txtRge->reOle = NULL;
+        heap_free(This);
+    }
+    return ref;
+}
+
+static const IUnknownVtbl reo_unk_vtbl =
+{
+    IRichEditOleImpl_fnQueryInterface,
+    IRichEditOleImpl_fnAddRef,
+    IRichEditOleImpl_fnRelease
+};
+
 static inline IRichEditOleImpl *impl_from_IRichEditOle(IRichEditOle *iface)
 {
     return CONTAINING_RECORD(iface, IRichEditOleImpl, IRichEditOle_iface);
@@ -99,56 +166,21 @@ static HRESULT WINAPI
 IRichEditOle_fnQueryInterface(IRichEditOle *me, REFIID riid, LPVOID *ppvObj)
 {
     IRichEditOleImpl *This = impl_from_IRichEditOle(me);
-
-    TRACE("%p %s\n", This, debugstr_guid(riid) );
-
-    *ppvObj = NULL;
-    if (IsEqualGUID(riid, &IID_IUnknown) ||
-        IsEqualGUID(riid, &IID_IRichEditOle))
-        *ppvObj = &This->IRichEditOle_iface;
-    else if (IsEqualGUID(riid, &IID_ITextDocument))
-        *ppvObj = &This->ITextDocument_iface;
-    if (*ppvObj)
-    {
-        IRichEditOle_AddRef(me);
-        return S_OK;
-    }
-    FIXME("%p: unhandled interface %s\n", This, debugstr_guid(riid) );
- 
-    return E_NOINTERFACE;   
+    return IUnknown_QueryInterface(This->outer_unk, riid, ppvObj);
 }
 
 static ULONG WINAPI
 IRichEditOle_fnAddRef(IRichEditOle *me)
 {
     IRichEditOleImpl *This = impl_from_IRichEditOle(me);
-    ULONG ref = InterlockedIncrement( &This->ref );
-
-    TRACE("%p ref = %u\n", This, ref);
-
-    return ref;
+    return IUnknown_AddRef(This->outer_unk);
 }
 
 static ULONG WINAPI
 IRichEditOle_fnRelease(IRichEditOle *me)
 {
     IRichEditOleImpl *This = impl_from_IRichEditOle(me);
-    ULONG ref = InterlockedDecrement(&This->ref);
-
-    TRACE ("%p ref=%u\n", This, ref);
-
-    if (!ref)
-    {
-        ITextRangeImpl *txtRge;
-        TRACE ("Destroying %p\n", This);
-        This->txtSel->reOle = NULL;
-        ITextSelection_Release(&This->txtSel->ITextSelection_iface);
-        IOleClientSite_Release(&This->clientSite->IOleClientSite_iface);
-        LIST_FOR_EACH_ENTRY(txtRge, &This->rangelist, ITextRangeImpl, entry)
-            txtRge->reOle = NULL;
-        heap_free(This);
-    }
-    return ref;
+    return IUnknown_Release(This->outer_unk);
 }
 
 static HRESULT WINAPI
@@ -2304,7 +2336,7 @@ CreateTextSelection(IRichEditOleImpl *reOle)
     return txtSel;
 }
 
-LRESULT CreateIRichEditOle(ME_TextEditor *editor, LPVOID *ppObj)
+LRESULT CreateIRichEditOle(IUnknown *outer_unk, ME_TextEditor *editor, LPVOID *ppObj)
 {
     IRichEditOleImpl *reo;
 
@@ -2312,6 +2344,7 @@ LRESULT CreateIRichEditOle(ME_TextEditor *editor, LPVOID *ppObj)
     if (!reo)
         return 0;
 
+    reo->IUnknown_inner.lpVtbl = &reo_unk_vtbl;
     reo->IRichEditOle_iface.lpVtbl = &revt;
     reo->ITextDocument_iface.lpVtbl = &tdvt;
     reo->ref = 1;
@@ -2330,8 +2363,12 @@ LRESULT CreateIRichEditOle(ME_TextEditor *editor, LPVOID *ppObj)
         return 0;
     }
     TRACE("Created %p\n",reo);
-    *ppObj = reo;
     list_init(&reo->rangelist);
+    if (outer_unk)
+        reo->outer_unk = outer_unk;
+    else
+        reo->outer_unk = &reo->IUnknown_inner;
+    *ppObj = reo;
 
     return 1;
 }
