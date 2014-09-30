@@ -51,6 +51,11 @@ typedef struct ITextSelectionImpl ITextSelectionImpl;
 typedef struct IOleClientSiteImpl IOleClientSiteImpl;
 typedef struct ITextRangeImpl ITextRangeImpl;
 
+typedef struct ME_CursorPair {
+    LONG start, end;
+    LONG ref;
+} ME_CursorPair;
+
 typedef struct IRichEditOleImpl {
     IRichEditOle IRichEditOle_iface;
     ITextDocument ITextDocument_iface;
@@ -65,7 +70,7 @@ typedef struct IRichEditOleImpl {
 struct ITextRangeImpl {
     ITextRange ITextRange_iface;
     LONG ref;
-    LONG start, end;
+    ME_CursorPair *cursorPair;
     struct list entry;
 
     IRichEditOleImpl *reOle;
@@ -84,6 +89,32 @@ struct IOleClientSiteImpl {
 
     IRichEditOleImpl *reOle;
 };
+
+static ME_CursorPair *CreateCursorPair(LONG start, LONG end)
+{
+    ME_CursorPair *cursorPair = heap_alloc(sizeof(ME_CursorPair));
+
+    if (!cursorPair)
+        return NULL;
+    cursorPair->ref = 1;
+    cursorPair->start = start;
+    cursorPair->end = end;
+    return cursorPair;
+}
+
+static void CursorPair_AddRef(ME_CursorPair *cursorPair)
+{
+    InterlockedIncrement(&cursorPair->ref);
+}
+
+static void CursorPair_Release(ME_CursorPair *cursorPair)
+{
+    ULONG ref = InterlockedDecrement(&cursorPair->ref);
+
+    TRACE("%p ref = %u\n", cursorPair, ref);
+    if (!ref)
+        heap_free(cursorPair);
+}
 
 static inline IRichEditOleImpl *impl_from_IRichEditOle(IRichEditOle *iface)
 {
@@ -494,6 +525,7 @@ static ULONG WINAPI ITextRange_fnRelease(ITextRange *me)
     {
         if (This->reOle)
         {
+            CursorPair_Release(This->cursorPair);
             list_remove(&This->entry);
             This->reOle = NULL;
         }
@@ -588,7 +620,7 @@ static HRESULT WINAPI ITextRange_fnGetChar(ITextRange *me, LONG *pch)
     if (!pch)
         return E_INVALIDARG;
 
-    ME_CursorFromCharOfs(This->reOle->editor, This->start, &cursor);
+    ME_CursorFromCharOfs(This->reOle->editor, This->cursorPair->start, &cursor);
     return range_GetChar(This->reOle->editor, &cursor, pch);
 }
 
@@ -614,7 +646,7 @@ static HRESULT WINAPI ITextRange_fnGetDuplicate(ITextRange *me, ITextRange **ppR
     if (!ppRange)
         return E_INVALIDARG;
 
-    return CreateITextRange(This->reOle, This->start, This->end, ppRange);
+    return CreateITextRange(This->reOle, This->cursorPair->start, This->cursorPair->end, ppRange);
 }
 
 static HRESULT WINAPI ITextRange_fnGetFormattedText(ITextRange *me, ITextRange **ppRange)
@@ -645,7 +677,7 @@ static HRESULT WINAPI ITextRange_fnGetStart(ITextRange *me, LONG *pcpFirst)
 
     if (!pcpFirst)
         return E_INVALIDARG;
-    *pcpFirst = This->start;
+    *pcpFirst = This->cursorPair->start;
     TRACE("%d\n", *pcpFirst);
     return S_OK;
 }
@@ -668,7 +700,7 @@ static HRESULT WINAPI ITextRange_fnGetEnd(ITextRange *me, LONG *pcpLim)
 
     if (!pcpLim)
         return E_INVALIDARG;
-    *pcpLim = This->end;
+    *pcpLim = This->cursorPair->end;
     TRACE("%d\n", *pcpLim);
     return S_OK;
 }
@@ -761,7 +793,7 @@ static HRESULT WINAPI ITextRange_fnCollapse(ITextRange *me, LONG bStart)
     if (!This->reOle)
         return CO_E_RELEASED;
 
-    return range_Collapse(bStart, &This->start, &This->end);
+    return range_Collapse(bStart, &This->cursorPair->start, &This->cursorPair->end);
 }
 
 static HRESULT WINAPI ITextRange_fnExpand(ITextRange *me, LONG Unit, LONG *pDelta)
@@ -1385,8 +1417,9 @@ static HRESULT CreateITextRange(IRichEditOleImpl *reOle, LONG start, LONG end, I
     txtRge->ITextRange_iface.lpVtbl = &trvt;
     txtRge->ref = 1;
     txtRge->reOle = reOle;
-    txtRge->start = start;
-    txtRge->end = end;
+    txtRge->cursorPair = CreateCursorPair(start, end);
+    if (!txtRge->cursorPair)
+        return E_OUTOFMEMORY;
     list_add_head(&reOle->rangelist, &txtRge->entry);
     *ppRange = &txtRge->ITextRange_iface;
     return S_OK;
