@@ -329,8 +329,9 @@ static HRESULT WINAPI IOleWindow_fnContextSensitiveHelp(IOleWindow *iface, BOOL 
 static HRESULT WINAPI IOleWindow_fnGetWindow(IOleWindow *iface, HWND *phwnd)
 {
     IOleClientSiteImpl *This = impl_from_IOleWindow(iface);
-    FIXME("not implemented: (%p)->(%p)\n", This, phwnd);
-    return E_NOTIMPL;
+    TRACE("(%p)->(%p)\n", This, phwnd);
+    *phwnd = This->reOle->editor->hWnd;
+    return S_OK;
 }
 
 static const IOleWindowVtbl olewinvt = {

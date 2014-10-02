@@ -941,6 +941,31 @@ static void test_ITextSelection_Collapse(void)
   release_interfaces(&w, &reOle, &txtDoc, &txtSel);
 }
 
+static void test_IOleWindow_GetWindow(void)
+{
+  HWND w;
+  IRichEditOle *reOle = NULL;
+  ITextDocument *txtDoc = NULL;
+  IOleClientSite *clientSite = NULL;
+  IOleWindow *olewin = NULL;
+  HRESULT hres;
+  HWND hwnd;
+
+  create_interfaces(&w, &reOle, &txtDoc, NULL);
+  hres = IRichEditOle_GetClientSite(reOle, &clientSite);
+  ok(hres == S_OK, "IRichEditOle_QueryInterface: %x\n", hres);
+
+  hres = IOleClientSite_QueryInterface(clientSite, &IID_IOleWindow, (void **)&olewin);
+  ok(hres == S_OK, "IOleClientSite_QueryInterface: 0x%08x\n", hres);
+  hres = IOleWindow_GetWindow(olewin, &hwnd);
+  ok(hres == S_OK, "IOleClientSite_GetWindow: 0x%08x\n", hres);
+  ok(w == hwnd, "got wrong pointer\n");
+
+  IOleClientSite_Release(clientSite);
+  IOleWindow_Release(olewin);
+  release_interfaces(&w, &reOle, &txtDoc, NULL);
+}
+
 START_TEST(richole)
 {
   /* Must explicitly LoadLibrary(). The test has no references to functions in
@@ -959,4 +984,5 @@ START_TEST(richole)
   test_ITextRange_GetStart_GetEnd();
   test_ITextRange_GetDuplicate();
   test_ITextRange_Collapse();
+  test_IOleWindow_GetWindow();
 }
