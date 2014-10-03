@@ -83,6 +83,7 @@ struct IOleClientSiteImpl {
     IOleWindow IOleWindow_iface;
     IOleInPlaceSite IOleInPlaceSite_iface;
     IOleInPlaceFrame IOleInPlaceFrame_iface;
+    IOleInPlaceUIWindow IOleInPlaceUIWindow_iface;
     LONG ref;
 
     IRichEditOleImpl *reOle;
@@ -199,6 +200,8 @@ IOleClientSite_fnQueryInterface(IOleClientSite *me, REFIID riid, LPVOID *ppvObj)
         *ppvObj = &This->IOleWindow_iface;
     else if (IsEqualGUID(riid, &IID_IOleInPlaceSite))
         *ppvObj = &This->IOleInPlaceSite_iface;
+    else if (IsEqualGUID(riid, &IID_IOleInPlaceUIWindow))
+        *ppvObj = &This->IOleInPlaceUIWindow_iface;
     if (*ppvObj)
     {
         IOleClientSite_AddRef(me);
@@ -606,6 +609,82 @@ static const IOleInPlaceSiteVtbl olestvt =
     IOleInPlaceSite_fnOnPosRectChange
 };
 
+/* IOleInPlaceUIWindow interface */
+static inline IOleClientSiteImpl *impl_from_IOleInPlaceUIWindow(IOleInPlaceUIWindow *iface)
+{
+    return CONTAINING_RECORD(iface, IOleClientSiteImpl, IOleInPlaceUIWindow_iface);
+}
+
+static HRESULT WINAPI IOleInPlaceUIWindow_fnQueryInterface(IOleInPlaceUIWindow *iface, REFIID riid, void **ppvObj)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceUIWindow(iface);
+    return IOleClientSite_QueryInterface(&This->IOleClientSite_iface, riid, ppvObj);
+}
+
+static ULONG WINAPI IOleInPlaceUIWindow_fnAddRef(IOleInPlaceUIWindow *iface)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceUIWindow(iface);
+    return IOleClientSite_AddRef(&This->IOleClientSite_iface);
+}
+
+static ULONG WINAPI IOleInPlaceUIWindow_fnRelease(IOleInPlaceUIWindow *iface)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceUIWindow(iface);
+    return IOleClientSite_Release(&This->IOleClientSite_iface);
+}
+
+static HRESULT WINAPI IOleInPlaceUIWindow_fnGetWindow(IOleInPlaceUIWindow *iface, HWND *phwnd)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceUIWindow(iface);
+    return IOleWindow_GetWindow(&This->IOleWindow_iface, phwnd);
+}
+
+static HRESULT WINAPI IOleInPlaceUIWindow_fnContextSensitiveHelp(IOleInPlaceUIWindow *iface, BOOL fEnterMode)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceUIWindow(iface);
+    return IOleWindow_ContextSensitiveHelp(&This->IOleWindow_iface, fEnterMode);
+}
+
+static HRESULT WINAPI IOleInPlaceUIWindow_fnGetBorder(IOleInPlaceUIWindow *iface, LPRECT lprectBorder)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceUIWindow(iface);
+    FIXME("not implemented: (%p)->(%p)\n", This, lprectBorder);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI IOleInPlaceUIWindow_fnRequestBorderSpace(IOleInPlaceUIWindow *iface, LPCBORDERWIDTHS pborderwidths)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceUIWindow(iface);
+    FIXME("not implemented: (%p)->(%p)\n", This, pborderwidths);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI IOleInPlaceUIWindow_fnSetBorderSpace(IOleInPlaceUIWindow *iface, LPCBORDERWIDTHS pborderwidths)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceUIWindow(iface);
+    FIXME("not implemented: (%p)->(%p)\n", This, pborderwidths);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI IOleInPlaceUIWindow_fnSetActiveObject(IOleInPlaceUIWindow *iface, IOleInPlaceActiveObject *pActiveObject, LPCOLESTR pszObjName)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceUIWindow(iface);
+    FIXME("not implemented: (%p)->(%p %p)\n", This, pActiveObject, pszObjName);
+    return E_NOTIMPL;
+}
+
+static const IOleInPlaceUIWindowVtbl oleuivt = {
+    IOleInPlaceUIWindow_fnQueryInterface,
+    IOleInPlaceUIWindow_fnAddRef,
+    IOleInPlaceUIWindow_fnRelease,
+    IOleInPlaceUIWindow_fnGetWindow,
+    IOleInPlaceUIWindow_fnContextSensitiveHelp,
+    IOleInPlaceUIWindow_fnGetBorder,
+    IOleInPlaceUIWindow_fnRequestBorderSpace,
+    IOleInPlaceUIWindow_fnSetBorderSpace,
+    IOleInPlaceUIWindow_fnSetActiveObject,
+};
+
 static IOleClientSiteImpl *
 CreateOleClientSite(IRichEditOleImpl *reOle)
 {
@@ -617,6 +696,7 @@ CreateOleClientSite(IRichEditOleImpl *reOle)
     clientSite->IOleWindow_iface.lpVtbl = &olewinvt;
     clientSite->IOleInPlaceSite_iface.lpVtbl = &olestvt;
     clientSite->IOleInPlaceFrame_iface.lpVtbl = &olefrvt;
+    clientSite->IOleInPlaceUIWindow_iface.lpVtbl = &oleuivt;
     clientSite->ref = 1;
     clientSite->reOle = reOle;
     return clientSite;
