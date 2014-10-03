@@ -531,8 +531,18 @@ static HRESULT STDMETHODCALLTYPE IOleInPlaceSite_fnGetWindowContext(IOleInPlaceS
                                                   LPRECT lprcPosRect, LPRECT lprcClipRect, LPOLEINPLACEFRAMEINFO lpFrameInfo)
 {
     IOleClientSiteImpl *This = impl_from_IOleInPlaceSite(iface);
-    FIXME("not implemented: (%p)->(%p %p %p %p %p\n)", This, ppFrame, ppDoc, lprcPosRect, lprcClipRect, lpFrameInfo);
-    return E_NOTIMPL;
+    TRACE("(%p)->(%p %p %p %p %p\n)", This, ppFrame, ppDoc, lprcPosRect, lprcClipRect, lpFrameInfo);
+    *ppFrame = &This->IOleInPlaceFrame_iface;
+    IOleInPlaceFrame_AddRef(&This->IOleInPlaceFrame_iface);
+
+    *ppDoc = NULL;
+
+    lpFrameInfo->fMDIApp = FALSE;
+    lpFrameInfo->hwndFrame = This->reOle->editor->hWnd;
+    lpFrameInfo->haccel = NULL;
+    lpFrameInfo->cAccelEntries = 0;
+
+    return S_OK;
 }
 
 static HRESULT STDMETHODCALLTYPE IOleInPlaceSite_fnScroll(IOleInPlaceSite *iface, SIZE scrollExtent)
