@@ -82,6 +82,7 @@ struct IOleClientSiteImpl {
     IOleClientSite IOleClientSite_iface;
     IOleWindow IOleWindow_iface;
     IOleInPlaceSite IOleInPlaceSite_iface;
+    IOleInPlaceFrame IOleInPlaceFrame_iface;
     LONG ref;
 
     IRichEditOleImpl *reOle;
@@ -345,6 +346,130 @@ static const IOleWindowVtbl olewinvt = {
     IOleWindow_fnContextSensitiveHelp
 };
 
+/* IOleInPlaceFrame interface */
+static inline IOleClientSiteImpl *impl_from_IOleInPlaceFrame(IOleInPlaceFrame *iface)
+{
+    return CONTAINING_RECORD(iface, IOleClientSiteImpl, IOleInPlaceFrame_iface);
+}
+
+static HRESULT WINAPI IOleInPlaceFrame_fnQueryInterface(IOleInPlaceFrame *iface, REFIID riid, void **ppvObj)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceFrame(iface);
+    return IOleClientSite_QueryInterface(&This->IOleClientSite_iface, riid, ppvObj);
+}
+
+static ULONG WINAPI IOleInPlaceFrame_fnAddRef(IOleInPlaceFrame *iface)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceFrame(iface);
+    return IOleClientSite_AddRef(&This->IOleClientSite_iface);
+}
+
+static ULONG WINAPI IOleInPlaceFrame_fnRelease(IOleInPlaceFrame *iface)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceFrame(iface);
+    return IOleClientSite_Release(&This->IOleClientSite_iface);
+}
+
+static HRESULT WINAPI IOleInPlaceFrame_fnGetWindow(IOleInPlaceFrame *iface, HWND *phwnd)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceFrame(iface);
+    return IOleWindow_GetWindow(&This->IOleWindow_iface, phwnd);
+}
+
+static HRESULT WINAPI IOleInPlaceFrame_fnContextSensitiveHelp(IOleInPlaceFrame *iface, BOOL fEnterMode)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceFrame(iface);
+    return IOleWindow_ContextSensitiveHelp(&This->IOleWindow_iface, fEnterMode);
+}
+
+static HRESULT WINAPI IOleInPlaceFrame_fnGetBorder(IOleInPlaceFrame *iface, LPRECT lprectBorder)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceFrame(iface);
+    FIXME("not implemented: (%p)->(%p)\n", This, lprectBorder);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI IOleInPlaceFrame_fnRequestBorderSpace(IOleInPlaceFrame *iface, LPCBORDERWIDTHS pborderwidths)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceFrame(iface);
+    FIXME("not implemented: (%p)->(%p)\n", This, pborderwidths);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI IOleInPlaceFrame_fnSetBorderSpace(IOleInPlaceFrame *iface, LPCBORDERWIDTHS pborderwidths)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceFrame(iface);
+    FIXME("not implemented: (%p)->(%p)\n", This, pborderwidths);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI IOleInPlaceFrame_fnSetActiveObject(IOleInPlaceFrame *iface, IOleInPlaceActiveObject *pActiveObject, LPCOLESTR pszObjName)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceFrame(iface);
+    FIXME("not implemented: (%p)->(%p %p)\n", This, pActiveObject, pszObjName);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI IOleInPlaceFrame_fnInsertMenus(IOleInPlaceFrame *iface, HMENU hmenuShared, LPOLEMENUGROUPWIDTHS lpMenuWidths)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceFrame(iface);
+    FIXME("not implemented: (%p)->(%p)\n", This, lpMenuWidths);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI IOleInPlaceFrame_fnSetMenu(IOleInPlaceFrame *iface, HMENU hmenuShared, HOLEMENU holemenu, HWND hwndActiveObject)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceFrame(iface);
+    FIXME("not implemented: (%p)\n", This);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI IOleInPlaceFrame_fnRemoveMenus(IOleInPlaceFrame *iface, HMENU hemnuShared)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceFrame(iface);
+    FIXME("not implemented: (%p)\n", This);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI IOleInPlaceFrame_fnSetStatusText(IOleInPlaceFrame *iface, LPCOLESTR pszStatusText)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceFrame(iface);
+    FIXME("not implemented: (%p)->(%p)\n", This, pszStatusText);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI IOleInPlaceFrame_fnEnableModeless(IOleInPlaceFrame *iface, BOOL fEnable)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceFrame(iface);
+    FIXME("not implemented: (%p)->(%d)\n", This, fEnable);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI IOleInPlaceFrame_fnTranslateAccelerator(IOleInPlaceFrame *iface, LPMSG lpmsg, WORD wID)
+{
+    IOleClientSiteImpl *This = impl_from_IOleInPlaceFrame(iface);
+    FIXME("not implemented: (%p)->(%p)\n", This, lpmsg);
+    return E_NOTIMPL;
+}
+
+static const IOleInPlaceFrameVtbl olefrvt = {
+    IOleInPlaceFrame_fnQueryInterface,
+    IOleInPlaceFrame_fnAddRef,
+    IOleInPlaceFrame_fnRelease,
+    IOleInPlaceFrame_fnGetWindow,
+    IOleInPlaceFrame_fnContextSensitiveHelp,
+    IOleInPlaceFrame_fnGetBorder,
+    IOleInPlaceFrame_fnRequestBorderSpace,
+    IOleInPlaceFrame_fnSetBorderSpace,
+    IOleInPlaceFrame_fnSetActiveObject,
+    IOleInPlaceFrame_fnInsertMenus,
+    IOleInPlaceFrame_fnSetMenu,
+    IOleInPlaceFrame_fnRemoveMenus,
+    IOleInPlaceFrame_fnSetStatusText,
+    IOleInPlaceFrame_fnEnableModeless,
+    IOleInPlaceFrame_fnTranslateAccelerator
+};
+
 /* IOleInPlaceSite interface */
 static inline IOleClientSiteImpl *impl_from_IOleInPlaceSite(IOleInPlaceSite *iface)
 {
@@ -481,6 +606,7 @@ CreateOleClientSite(IRichEditOleImpl *reOle)
     clientSite->IOleClientSite_iface.lpVtbl = &ocst;
     clientSite->IOleWindow_iface.lpVtbl = &olewinvt;
     clientSite->IOleInPlaceSite_iface.lpVtbl = &olestvt;
+    clientSite->IOleInPlaceFrame_iface.lpVtbl = &olefrvt;
     clientSite->ref = 1;
     clientSite->reOle = reOle;
     return clientSite;
