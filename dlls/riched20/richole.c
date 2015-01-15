@@ -1857,11 +1857,16 @@ static HRESULT WINAPI ITextSelection_fnSetIndex(ITextSelection *me, LONG Unit, L
 static HRESULT WINAPI ITextSelection_fnSetRange(ITextSelection *me, LONG cpActive, LONG cpOther)
 {
     ITextSelectionImpl *This = impl_from_ITextSelection(me);
+    LONG start, end;
     if (!This->reOle)
         return CO_E_RELEASED;
 
-    FIXME("not implemented\n");
-    return E_NOTIMPL;
+    ME_GetSelectionOfs(This->reOle->editor, &start, &end);
+    cp2range(This->reOle->editor, &cpActive, &cpOther);
+    if (cpActive == start && cpOther == end)
+        return S_FALSE;
+    ME_SetSelection(This->reOle->editor, cpActive, cpOther);
+    return S_OK;
 }
 
 static HRESULT WINAPI ITextSelection_fnInRange(ITextSelection *me, ITextRange *pRange, LONG *pb)
