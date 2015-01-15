@@ -1228,6 +1228,45 @@ static void test_ITextSelection_SetStart(void)
   release_interfaces(&w, &reOle, &txtDoc, &txtSel);
 }
 
+static void test_ITextSelection_SetEnd(void)
+{
+  HWND w;
+  IRichEditOle *reOle = NULL;
+  ITextDocument *txtDoc = NULL;
+  ITextSelection *txtSel = NULL;
+  HRESULT hres;
+  LONG first, lim, start, end;
+  static const CHAR test_text1[] = "TestSomeText";
+
+  create_interfaces(&w, &reOle, &txtDoc, &txtSel);
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+
+  first = 4, lim = 8;
+  SendMessageA(w, EM_SETSEL, first, lim);
+  hres = ITextSelection_SetEnd(txtSel, lim);
+  ok(hres == S_FALSE, "ITextSelection_SetEnd\n");
+
+  hres = ITextSelection_SetEnd(txtSel, 6);
+  ok(hres == S_OK, "ITextSelection_SetEnd\n");
+  SendMessageA(w, EM_GETSEL, (LPARAM)&start, (WPARAM)&end);
+  ok(start == 4, "got wrong start value: %d\n", start);
+  ok(end == 6, "got wrong end value: %d\n", end);
+
+  hres = ITextSelection_SetEnd(txtSel, 14);
+  ok(hres == S_OK, "ITextSelection_SetEnd\n");
+  SendMessageA(w, EM_GETSEL, (LPARAM)&start, (WPARAM)&end);
+  ok(start == 4, "got wrong start value: %d\n", start);
+  ok(end == 13, "got wrong end value: %d\n", end);
+
+  hres = ITextSelection_SetEnd(txtSel, -1);
+  ok(hres == S_OK, "ITextSelection_SetEnd\n");
+  SendMessageA(w, EM_GETSEL, (LPARAM)&start, (WPARAM)&end);
+  ok(start == 0, "got wrong start value: %d\n", start);
+  ok(end == 0, "got wrong end value: %d\n", end);
+
+  release_interfaces(&w, &reOle, &txtDoc, &txtSel);
+}
+
 START_TEST(richole)
 {
   /* Must explicitly LoadLibrary(). The test has no references to functions in
@@ -1243,6 +1282,7 @@ START_TEST(richole)
   test_ITextSelection_Collapse();
   test_ITextSelection_SetRange();
   test_ITextSelection_SetStart();
+  test_ITextSelection_SetEnd();
   test_ITextDocument_Range();
   test_ITextRange_GetChar();
   test_ITextRange_GetStart_GetEnd();

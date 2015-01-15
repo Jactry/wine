@@ -1743,11 +1743,13 @@ static HRESULT WINAPI ITextSelection_fnGetEnd(ITextSelection *me, LONG *pcpLim)
 static HRESULT WINAPI ITextSelection_fnSetEnd(ITextSelection *me, LONG cpLim)
 {
     ITextSelectionImpl *This = impl_from_ITextSelection(me);
+    LONG start, end, cpFirst;
     if (!This->reOle)
         return CO_E_RELEASED;
 
-    FIXME("not implemented\n");
-    return E_NOTIMPL;
+    ME_GetSelectionOfs(This->reOle->editor, &start, &end);
+    cpFirst = min(start, cpLim);
+    return ITextSelection_SetRange(me, cpFirst, cpLim);
 }
 
 static HRESULT WINAPI ITextSelection_fnGetFont(ITextSelection *me, ITextFont **pFont)
