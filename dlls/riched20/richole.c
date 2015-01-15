@@ -830,14 +830,36 @@ static HRESULT WINAPI ITextRange_fnSetIndex(ITextRange *me, LONG Unit, LONG Inde
     return E_NOTIMPL;
 }
 
+static void cp2range(ME_TextEditor *editor, LONG *cp1, LONG *cp2)
+{
+    int len = ME_GetTextLength(editor) + 1;
+    *cp1 = max(*cp1, 0);
+    *cp2 = max(*cp2, 0);
+    *cp1 = min(*cp1, len);
+    *cp2 = min(*cp2, len);
+    if (*cp1 > *cp2)
+    {
+        int tmp = *cp1;
+        *cp1 = *cp2;
+        *cp2 = tmp;
+    }
+    if (*cp1 == len)
+        *cp1 = *cp2 = len - 1;
+}
+
 static HRESULT WINAPI ITextRange_fnSetRange(ITextRange *me, LONG cpActive, LONG cpOther)
 {
     ITextRangeImpl *This = impl_from_ITextRange(me);
     if (!This->reOle)
         return CO_E_RELEASED;
 
-    FIXME("not implemented %p\n", This);
-    return E_NOTIMPL;
+    cp2range(This->reOle->editor, &cpActive, &cpOther);
+    if (cpActive == This->start && cpOther == This->end)
+        return S_FALSE;
+
+    This->start = cpActive;
+    This->end = cpOther;
+    return S_OK;
 }
 
 static HRESULT WINAPI ITextRange_fnInRange(ITextRange *me, ITextRange *pRange, LONG *pb)
