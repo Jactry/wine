@@ -688,11 +688,11 @@ static HRESULT WINAPI ITextRange_fnGetStart(ITextRange *me, LONG *pcpFirst)
 static HRESULT WINAPI ITextRange_fnSetStart(ITextRange *me, LONG cpFirst)
 {
     ITextRangeImpl *This = impl_from_ITextRange(me);
+    LONG cpLim = max(cpFirst, This->end);
     if (!This->reOle)
         return CO_E_RELEASED;
 
-    FIXME("not implemented %p\n", This);
-    return E_NOTIMPL;
+    return ITextRange_SetRange(me, cpFirst, cpLim);
 }
 
 static HRESULT WINAPI ITextRange_fnGetEnd(ITextRange *me, LONG *pcpLim)
