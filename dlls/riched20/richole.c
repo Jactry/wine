@@ -1717,11 +1717,13 @@ static HRESULT WINAPI ITextSelection_fnGetStart(ITextSelection *me, LONG *pcpFir
 static HRESULT WINAPI ITextSelection_fnSetStart(ITextSelection *me, LONG cpFirst)
 {
     ITextSelectionImpl *This = impl_from_ITextSelection(me);
+    LONG start, end, cpLim;
     if (!This->reOle)
         return CO_E_RELEASED;
 
-    FIXME("not implemented\n");
-    return E_NOTIMPL;
+    ME_GetSelectionOfs(This->reOle->editor, &start, &end);
+    cpLim = max(cpFirst, end);
+    return ITextSelection_SetRange(me, cpFirst, cpLim);
 }
 
 static HRESULT WINAPI ITextSelection_fnGetEnd(ITextSelection *me, LONG *pcpLim)
