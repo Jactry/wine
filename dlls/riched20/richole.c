@@ -711,11 +711,11 @@ static HRESULT WINAPI ITextRange_fnGetEnd(ITextRange *me, LONG *pcpLim)
 static HRESULT WINAPI ITextRange_fnSetEnd(ITextRange *me, LONG cpLim)
 {
     ITextRangeImpl *This = impl_from_ITextRange(me);
+    LONG cpFirst = min(cpLim, This->start);
     if (!This->reOle)
         return CO_E_RELEASED;
 
-    FIXME("not implemented %p\n", This);
-    return E_NOTIMPL;
+    return ITextRange_SetRange(me, cpFirst, cpLim);
 }
 
 static HRESULT WINAPI ITextRange_fnGetFont(ITextRange *me, ITextFont **pFont)

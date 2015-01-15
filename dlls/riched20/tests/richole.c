@@ -1066,6 +1066,49 @@ static void test_ITextRange_SetStart(void)
   release_interfaces(&w, &reOle, &txtDoc, NULL);
 }
 
+static void test_ITextRange_SetEnd(void)
+{
+  HWND w;
+  IRichEditOle *reOle = NULL;
+  ITextDocument *txtDoc = NULL;
+  ITextRange *txtRge = NULL;
+  HRESULT hres;
+  LONG first, lim, start, end;
+  static const CHAR test_text1[] = "TestSomeText";
+
+  create_interfaces(&w, &reOle, &txtDoc, NULL);
+  SendMessageA(w, WM_SETTEXT, 0, (LPARAM)test_text1);
+
+  first = 4, lim = 8;
+  ITextDocument_Range(txtDoc, first, lim, &txtRge);
+  hres = ITextRange_SetEnd(txtRge, lim);
+  ok(hres == S_FALSE, "ITextRange_SetEnd\n");
+
+  hres = ITextRange_SetEnd(txtRge, 6);
+  ok(hres == S_OK, "ITextRange_SetEnd\n");
+  ITextRange_GetStart(txtRge, &start);
+  ITextRange_GetEnd(txtRge, &end);
+  ok(start == 4, "got wrong start value: %d\n", start);
+  ok(end == 6, "got wrong end value: %d\n", end);
+
+  hres = ITextRange_SetEnd(txtRge, 14);
+  ok(hres == S_OK, "ITextRange_SetEnd\n");
+  ITextRange_GetStart(txtRge, &start);
+  ITextRange_GetEnd(txtRge, &end);
+  ok(start == 4, "got wrong start value: %d\n", start);
+  ok(end == 13, "got wrong end value: %d\n", end);
+
+  hres = ITextRange_SetEnd(txtRge, -1);
+  ok(hres == S_OK, "ITextRange_SetEnd\n");
+  ITextRange_GetStart(txtRge, &start);
+  ITextRange_GetEnd(txtRge, &end);
+  ok(start == 0, "got wrong start value: %d\n", start);
+  ok(end == 0, "got wrong end value: %d\n", end);
+
+  ITextRange_Release(txtRge);
+  release_interfaces(&w, &reOle, &txtDoc, NULL);
+}
+
 START_TEST(richole)
 {
   /* Must explicitly LoadLibrary(). The test has no references to functions in
@@ -1086,4 +1129,5 @@ START_TEST(richole)
   test_ITextRange_Collapse();
   test_ITextRange_SetRange();
   test_ITextRange_SetStart();
+  test_ITextRange_SetEnd();
 }
