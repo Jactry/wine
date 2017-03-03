@@ -49,6 +49,7 @@ interface IAMTVTuner;
 interface IAMVfwCaptureDialogs;
 interface IAMVfwCompressDialogs;
 interface IAMVideoCompression;
+interface IAMVideoControl;
 interface IAMVideoDecimationProperties;
 interface IAMVideoProcAmp;
 interface IAMGraphBuilderCallback;
@@ -977,6 +978,26 @@ typedef enum tagVideoProcAmpFlags
     VideoProcAmp_Flags_Auto   = 0x0001,
     VideoProcAmp_Flags_Manual = 0x0002,
 } VideoProcAmpFlags;
+
+/*****************************************************************************
+ * IAMVideoControl interface
+ */
+[
+    object,
+    uuid(6a2e0670-28e4-11d0-a18c-00a0c9118956),
+    pointer_default(unique)
+]
+interface IAMVideoControl : IUnknown
+{
+    HRESULT GetCaps( [in] IPin *pPin, [out] LONG *pFlags );
+    HRESULT SetMode( [in] IPin *pPin, [in] LONG Mode );
+    HRESULT GetMode( [in] IPin *pPin,[out] LONG *Mode );
+    HRESULT GetCurrentActualFrameRate( [in] IPin *pPin, [out] LONGLONG *ActualFrameRate );
+    HRESULT GetMaxAvailableFrameRate( [in] IPin *pPin, [in] LONG iIndex, [in] SIZE Dimensions,
+                                      [out] LONGLONG *MaxAvailableFrameRate );
+    HRESULT GetFrameRateList( [in] IPin *pPin, [in] LONG iIndex, [in] SIZE Dimemsions,
+                              [out] LONG *ListSize, [out] LONGLONG **FrameRates );
+}
 
 /*****************************************************************************
  * IAMVideoProcAmp interface
