@@ -46,6 +46,7 @@ WINE_DEFAULT_DEBUG_CHANNEL(qcap);
 
 static const IBaseFilterVtbl VfwCapture_Vtbl;
 static const IAMStreamConfigVtbl IAMStreamConfig_VTable;
+static const IAMVideoControlVtbl IAMVideoControl_Vtbl;
 static const IAMVideoProcAmpVtbl IAMVideoProcAmp_VTable;
 static const IPersistPropertyBagVtbl IPersistPropertyBag_VTable;
 static const IPinVtbl VfwPin_Vtbl;
@@ -57,6 +58,7 @@ typedef struct VfwCapture
     IUnknown IUnknown_inner;
     BaseFilter filter;
     IAMStreamConfig IAMStreamConfig_iface;
+    IAMVideoControl IAMVideoControl_iface;
     IAMVideoProcAmp IAMVideoProcAmp_iface;
     IPersistPropertyBag IPersistPropertyBag_iface;
     IUnknown *outer_unk;
@@ -84,6 +86,11 @@ static inline VfwCapture *impl_from_IBaseFilter(IBaseFilter *iface)
 static inline VfwCapture *impl_from_IAMStreamConfig(IAMStreamConfig *iface)
 {
     return CONTAINING_RECORD(iface, VfwCapture, IAMStreamConfig_iface);
+}
+
+static inline VfwCapture *impl_from_IAMVideoControl(IAMVideoControl *iface)
+{
+    return CONTAINING_RECORD(iface, VfwCapture, IAMVideoControl_iface);
 }
 
 static inline VfwCapture *impl_from_IAMVideoProcAmp(IAMVideoProcAmp *iface)
@@ -131,6 +138,8 @@ static HRESULT WINAPI unknown_inner_QueryInterface(IUnknown *iface, REFIID riid,
         *ret_iface = &This->IAMStreamConfig_iface;
     else if (IsEqualIID(riid, &IID_IAMVideoProcAmp))
         *ret_iface = &This->IAMVideoProcAmp_iface;
+    else if (IsEqualIID(riid, &IID_IAMVideoControl))
+         *ret_iface = &This->IAMVideoControl_iface;
     else
         WARN("(%p, %s, %p): not found\n", This, debugstr_guid(riid), ret_iface);
 
@@ -229,6 +238,7 @@ IUnknown * WINAPI QCAP_createVFWCaptureFilter(IUnknown *pUnkOuter, HRESULT *phr)
 
     pVfwCapture->IUnknown_inner.lpVtbl = &unknown_inner_vtbl;
     pVfwCapture->IAMStreamConfig_iface.lpVtbl = &IAMStreamConfig_VTable;
+    pVfwCapture->IAMVideoControl_iface.lpVtbl = &IAMVideoControl_Vtbl;
     pVfwCapture->IAMVideoProcAmp_iface.lpVtbl = &IAMVideoProcAmp_VTable;
     pVfwCapture->IPersistPropertyBag_iface.lpVtbl = &IPersistPropertyBag_VTable;
     pVfwCapture->init = FALSE;
@@ -831,4 +841,80 @@ static const IPinVtbl VfwPin_Vtbl =
     BaseOutputPinImpl_BeginFlush,
     BaseOutputPinImpl_EndFlush,
     BasePinImpl_NewSegment
+};
+
+static HRESULT WINAPI IAMVideoControlImpl_QueryInterface( IAMVideoControl *iface, REFIID riid,
+                                                          void **ret_iface )
+{
+    VfwCapture *This = impl_from_IAMVideoControl(iface);
+
+    return IUnknown_QueryInterface(This->outer_unk, riid, ret_iface);
+}
+
+static ULONG WINAPI IAMVideoControlImpl_AddRef( IAMVideoControl * iface )
+{
+    VfwCapture *This = impl_from_IAMVideoControl(iface);
+
+    return IUnknown_AddRef(This->outer_unk);
+}
+
+static ULONG WINAPI IAMVideoControlImpl_Release( IAMVideoControl * iface )
+{
+    VfwCapture *This = impl_from_IAMVideoControl(iface);
+
+    return IUnknown_Release(This->outer_unk);
+}
+
+static HRESULT WINAPI IAMVideoControlImpl_GetCaps( IAMVideoControl * iface, IPin *pPin, LONG *pFlags )
+{
+     FIXME("%p: %p %p - stub\n", iface, pPin, pFlags);
+     return E_NOTIMPL;
+}
+
+static HRESULT WINAPI IAMVideoControlImpl_SetMode( IAMVideoControl *iface, IPin *pPin, LONG Mode )
+{
+     FIXME("%p: %p %x - stub\n", iface, pPin, Mode);
+     return E_NOTIMPL;
+}
+
+static HRESULT WINAPI IAMVideoControlImpl_GetMode( IAMVideoControl *iface, IPin *pPin, LONG *Mode )
+{
+     FIXME("%p: %p %p - stub\n", iface, pPin, Mode);
+     return E_NOTIMPL;
+}
+
+static HRESULT WINAPI IAMVideoControlImpl_GetCurrentActualFrameRate( IAMVideoControl *iface, IPin *pPin,
+                                                                             LONGLONG *ActualFrameRate )
+{
+     FIXME("%p: %p %p - stub\n", iface, pPin, ActualFrameRate);
+     return E_NOTIMPL;
+}
+
+static HRESULT WINAPI IAMVideoControlImpl_GetMaxAvailableFrameRate( IAMVideoControl *iface, IPin *pPin,
+                                                                            LONG iIndex, SIZE Dimensions,
+                                                                            LONGLONG *MaxAvailableFrameRate )
+{
+     FIXME("%p: %p %x %p - stub\n", iface, pPin, iIndex, MaxAvailableFrameRate);
+     return E_NOTIMPL;
+}
+
+static HRESULT WINAPI IAMVideoControlImpl_GetFrameRateList( IAMVideoControl *iface, IPin *pPin,
+                                                                    LONG iIndex, SIZE Dimemsions,
+                                                                    LONG *ListSize, LONGLONG **FrameRates )
+{
+     FIXME("%p: %p %x %p %p - stub\n", iface, pPin, iIndex, ListSize, FrameRates);
+     return E_NOTIMPL;
+}
+
+static const IAMVideoControlVtbl IAMVideoControl_Vtbl =
+{
+     IAMVideoControlImpl_QueryInterface,
+     IAMVideoControlImpl_AddRef,
+     IAMVideoControlImpl_Release,
+     IAMVideoControlImpl_GetCaps,
+     IAMVideoControlImpl_SetMode,
+     IAMVideoControlImpl_GetMode,
+     IAMVideoControlImpl_GetCurrentActualFrameRate,
+     IAMVideoControlImpl_GetMaxAvailableFrameRate,
+     IAMVideoControlImpl_GetFrameRateList
 };
